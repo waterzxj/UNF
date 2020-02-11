@@ -18,7 +18,6 @@ data_loader_conf = {
         "name_cls":"WordField",
         "attrs":{
             "tokenize":"WhitespaceTokenizer",
-            "vectors": "path" #这个field是有词向量预训练好的
             }
         },
         {
@@ -27,21 +26,21 @@ data_loader_conf = {
         }],
     "iterator":{
         "batch_size":64,
-        "device":"cpu",
+        "shuffle": True,
     }
 }
 
 #模型相关
 model_conf = [
     {
-        "name": "field_name",
+        "name": "TEXT",
         "encoder_cls": "TextCnn",
         "encoder_params": {
             "input_dim": 100,
             "filter_num": 100,
             "filter_size": [1,2,3,4],
             "dropout": 0.1,
-            "pretrained": True,
+            "pretrained": False,
         }
     }
 ]
@@ -59,6 +58,9 @@ decoder_conf = {
 learner_conf = {
     "num_epochs": 10,
     "optimizer": "Adam",
+    "optimizer_parmas": {
+        "lr": 1e-5
+    },
     "device": "cuda:1",
     "loss": "CrossEntropyLoss",
     "serialization_dir": "model_save"

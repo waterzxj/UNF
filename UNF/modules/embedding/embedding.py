@@ -2,15 +2,20 @@
 """
 Embedding类的抽象
 """
+import os
+import sys
+sys.path.append("modules")
+print(sys.path)
+
 import torch
 from torch import nn
 import torch.nn.functional as F
 
-from basetype import InitType
-from common_util import init_tensor
+from module_util import init_tensor
+from base_type import InitType, FAN_MODE, ActivationType
 
 
-class BaseEmbedding(nn.Modules):
+class BaseEmbedding(nn.Module):
     """
     Emebdding类的基类
     :params dim int类型，embedding的维度大小
@@ -22,6 +27,8 @@ class BaseEmbedding(nn.Modules):
 
     def __init__(self, dim, vocab_size,
                 device=None, dropout=0.0):
+
+        super(BaseEmbedding, self).__init__()
         self.dim = dim
         self.vocab_size = vocab_size
         self.device = device
@@ -31,15 +38,15 @@ class BaseEmbedding(nn.Modules):
 
     @classmethod
     def from_dict(cls, params):
-        retuen cls(**params)
+        return cls(**params)
 
     def forward(self, input):
         raise Exception("BaseEmbedding forward method not implemented!")
 
 
-class TokenEmbedding(nn.Modules):
+class TokenEmbedding(BaseEmbedding):
     def __init__(self, dim, vocab_size, device=None,
-                    dropout=0,0, 
+                    dropout=0.0, 
                     init_type=InitType.UNIFORM,
                     low=0, high=1, mean=0, std=1,
                     activation_type=ActivationType.NONE,
@@ -57,16 +64,16 @@ class TokenEmbedding(nn.Modules):
         super(TokenEmbedding, self).__init__(dim, vocab_size, device,
                                                 dropout)
 
-        self.embeddings = nn.Parameters(vocab_size, dim)
-        embedding_lookup_table = init_tensor(torch.tensor(vocab_size, dim),
+        self.embeddings = nn.Embedding(vocab_size, dim)
+        embedding_lookup_table = init_tensor(tensor=torch.empty(vocab_size, dim),
                 init_type=init_type, low=low, high=high, mean=mean, std=std,
                 activation_type=activation_type, fan_mode=fan_mode, 
                 negative_slope=negative_slope)
 
-        self.embedding.weight.data.copy_(embedding_lookup_table)
+        self.embeddings.weight.data.copy_(embedding_lookup_table)
     
     def forward(self, input):
-        embedding = self.embeddings[input]
+        embedding = self.embeddings(input)
         return self.dropout(embedding)
 
     @classmethod

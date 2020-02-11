@@ -1,15 +1,18 @@
 #coding:utf-8
+import os
+import sys
+sys.path.append("modules")
 import torch
 from torch import nn
 import torch.nn.functional as F
 
-from common.utils import initial_parameter
+from module_util import initial_parameter
 
 
 class CnnMaxpoolLayer(nn.Module):
     def __init__(self, input_num, output_num,
                 filter_size, stride=1, padding=0,
-                activation='relu', init_method=None)
+                activation='relu', initial_method=None, **kwargs):
         """
         cnn+maxpooling的结构做encoder
         :params input_num int 输入的维度
@@ -24,12 +27,13 @@ class CnnMaxpoolLayer(nn.Module):
         if not isinstance(output_num, (tuple, list)):
             output_num = [output_num] * len(filter_size)
 
-        assert len(filter_size) == len(output_num), 
+        assert len(filter_size) == len(output_num), \
                 "Filter size len is not equal output_num len"
 
+        print("stride", stride)
         self.convs = nn.ModuleList(
-            [nn.Conv1d(in_channels=input_num, output_channels=on, 
-                        kernal_size=ks, stride=stride, padding=padding) 
+            [nn.Conv1d(in_channels=input_num, out_channels=on, 
+                        kernel_size=ks, stride=stride, padding=padding) 
                         for on, ks in zip(output_num, filter_size)]
         )
 
@@ -51,13 +55,13 @@ class CnnMaxpoolLayer(nn.Module):
         """
         #[b, l, d] -> [b, d, l]
         input = torch.transpose(input, 1, 2)
-        conv_res = [self.activation(conv(x)) for conv in self.convs] #[b, o, lout]
+        conv_res = [self.activation(conv(input)) for conv in self.convs] #[b, o, lout]
 
         if mask is not None:
             mask = mask.unsquuze(1) # [b, 1, l]
-            xs = [x.masked_fill_(mask, float('-inf')) for x in xs]
+            conv_res = [x.masked_fill_(mask, float('-inf')) for x in conv_res]
 
-        tmp = [F.MaxPool1d(input=x, kernal_size=x.size(2)).squeeze(2) for x in xs]
+        tmp = [F.max_pool1d(input=x, kernel_size=x.size(2)).squeeze(2) for x in conv_res]
         return torch.cat(tmp, dim=-1)
 
 

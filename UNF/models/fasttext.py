@@ -1,9 +1,11 @@
 #coding:utf-8
+import sys
+sys.path.append("models")
 import torch
 from torch import nn
 import torch.nn.functional as F
 
-from .model import Model
+from model import Model
 
 class FastText(Model):
     """

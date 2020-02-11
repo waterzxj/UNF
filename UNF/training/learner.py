@@ -1,24 +1,31 @@
 #coding:utf-8
 import logging
 import time
+import os
+import sys
+import traceback
+sys.path.append("training/learner_util")
 
-from .util import MetricTracker,TensorboardWriter,rescale_gradients
-from .util import dump_metrics, Checkpointer,enable_gradient_clipping
-from .metric import *
-from .loss import *
+from learner_util import MetricTracker, rescale_gradients, TensorBoardWriter
+from learner_util import dump_metrics, Checkpointer, enable_gradient_clipping
+from metric import *
+from loss import *
+from optimizer import *
 
+logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s',
+                            level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class Trainer(object):
     def __init__(self, model, train_iter, val_iter,
-                    loss, optimizer, num_epochs,
+                    optimizer, num_epochs,
                     loss=None, metric="F1Measure", label_index=1,
                     serialization_dir=None,
                     patience=None, validation_metric="-loss",
                     device=-1, grad_norm=None, grad_clipping=None,
-                    learning_rate_scheduler=None, summary_interval=100,
-                    histogram_interval=None, should_log_parameter_statistics=True,
-                    should_log_learning_rate=False, log_batch_size_period=None,
+                    learning_rate_scheduler=None, summary_interval=1,
+                    histogram_interval=1, should_log_parameter_statistics=True,
+                    should_log_learning_rate=False, log_batch_size_period=False,
                     num_serialized_models_to_keep=20, **kwargs):          
         """
         训练过程的封装
@@ -44,13 +51,15 @@ class Trainer(object):
         
         self.model = model
         self.loss = loss
-        self.optimizer = optimizer
         self.num_epochs = num_epochs
         self.train_iter = train_iter
         self.val_iter = val_iter
         self.serialization_dir = serialization_dir
-        self.cuda_device = cuda_device
+        self.cuda_device = device
         self.learning_rate_scheduler = learning_rate_scheduler
+
+        if self.cuda_device != -1:
+            self.model =self.model.to(self.cuda_device)
 
         self.grad_norm = grad_norm
         self.grad_clipping = grad_clipping
@@ -68,7 +77,7 @@ class Trainer(object):
 
         self.checkpointer = Checkpointer(serialization_dir, num_serialized_models_to_keep)
         self.metric_tracker = MetricTracker(patience, validation_metric)
-        self.tensorboard = TensorboardWriter(
+        self.tensorboard = TensorBoardWriter(
             get_batch_num_total=lambda: self.batch_num_total,
             serialization_dir=serialization_dir,
             summary_interval=summary_interval,
@@ -79,6 +88,7 @@ class Trainer(object):
         if histogram_interval is not None:
             self.tensorboard.enable_activation_logging(self.model)
 
+        self.optimizer = globals()[optimizer](model.parameters())
         self.metric = globals()[metric](label_index)
         self.loss_func = globals()[loss]()
 
@@ -99,16 +109,17 @@ class Trainer(object):
         
         enable_gradient_clipping(self.model, self.grad_clipping)
         logger.info("Beginning training.")
-        training_elapsed_time = time.time()
+        logger.info("device:%s" % self.cuda_device)
+        training_start_time = time.time()
         train_epoch = 0
 
-        metrcis = {}
+        metrics = {}
         metrics['best_epoch'] = self.metric_tracker.best_epoch
         for key, value in self.metric_tracker.best_epoch_metrics.items():
             metrics["best_validation_" + key] = value
 
-        for epcoh in range(epoch_counter, self.epoch):
-            train_metrics = self.train_epoch(epcoh)
+        for epoch in range(epoch_counter, self.num_epochs):
+            train_metrics = self.train_epoch(epoch)
             #机器情况的监控
             if 'cpu_memory_MB' in train_metrics:
                 metrics['peak_cpu_memory_MB'] = max(metrics.get('peak_cpu_memory_MB', 0),
@@ -159,8 +170,9 @@ class Trainer(object):
 
             self.save_checkpoint(epoch)
             train_epoch += 1
+            
 
-            return metrcis
+        return metrics
 
     def save_checkpoint(self, epoch):
         """
@@ -225,20 +237,20 @@ class Trainer(object):
         """
         一个epoch的训练，并返回相应的训练metric
         """
-        logger.info("Epoch %d/%d", epoch, self.num_epochs - 1)
+        logger.info("Epoch %d/%d", float(epoch+1), self.num_epochs)
         train_loss = 0.0
 
         self.model.train()
         batches_this_epoch = 0
-        if self._batch_num_total is None:
-            self._batch_num_total = 0
+        if self.batch_num_total is None:
+            self.batch_num_total = 0
         
         histogram_parameters = set(self.model.get_parameter_names())
         logger.info("Training")
 
-        for batch_group in self.train_data:
+        for batch_group in self.train_iter:
             batches_this_epoch += 1
-            self._batch_num_total += 1
+            self.batch_num_total += 1
             self.optimizer.zero_grad()
 
             loss = self.batch_loss(batch_group)
@@ -276,19 +288,21 @@ class Trainer(object):
             if self.tensorboard.should_log_histograms_this_batch():
                 self.tensorboard.log_histograms(self.model, histogram_parameters)
 
-        metrics = self.get_metrics(-, batches_this_epoch, reset=True)
-        return metrcis
+        metrics = self.get_metrics(train_loss, batches_this_epoch, reset=True)
+        return metrics
         
     def get_metrics(self, loss, batchs, reset=False):
-        metrics = self.metric.get_metrics(reset)
-        metrcis["loss"] = loss / (batchs + 1e-8)
-        return metrcis
+        metrics = self.metric.get_metric(reset)
+        metrics["loss"] = float(loss) / (batchs + 1e-8) if float(loss) > 0 else 0.0
+        return metrics
 
     def batch_loss(self, batch_group):
         """
         每个batch的数据得到loss
         """
         data, label = batch_group
+        if self.cuda_device != -1:
+            data, label = data.to(self.cuda_device), label.to(self.cuda_device)
         logits = self.model(data)["logits"]
         #计算loss
         loss = self.loss_func(logits, label)
@@ -305,12 +319,12 @@ class Trainer(object):
         for batch_group in self.val_iter:
             loss = self.batch_loss(batch_group)
 
-            is loss is not None:
+            if loss is not None:
                 batches_this_epoch += 1
                 val_loss += loss.detach().cpu().numpy()
 
         return val_loss, batches_this_epoch
     
     @classmethod
-    def from_options(cls, conf)
+    def from_options(cls, conf):
         return cls(**conf)

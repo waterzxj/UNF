@@ -104,7 +104,7 @@ class F1Measure(Metric):
         f1_measure = 2. * ((precision * recall) / (precision + recall + 1e-13))
         if reset:
             self.reset()
-        return precision, recall, f1_measure
+        return {"precision":precision, "recall": recall, "f1_measure":f1_measure}
 
     def reset(self):
         self._true_positives = 0.0

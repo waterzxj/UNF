@@ -3,6 +3,7 @@ import os
 import shutil
 import re
 import logging
+import json
 
 import torch
 from tensorboardX import SummaryWriter
@@ -35,7 +36,7 @@ class Checkpointer(object):
 
             if is_best_so_far:
                 logger.info("Best validation performance so far. "
-                            "Copying weights to '%s/best.th'.", self._serialization_dir)
+                            "Copying weights to '%s/best.th'.", self.serialization_dir)
                 shutil.copyfile(model_path, os.path.join(self.serialization_dir, "best.th"))
 
     def find_latest_checkpoint(self):
@@ -110,7 +111,7 @@ class Checkpointer(object):
             return {}
 
 
-class MetricTracker(objetc):
+class MetricTracker(object):
     def __init__(self,
                  patience,
                  metric_name,
@@ -200,7 +201,7 @@ class MetricTracker(objetc):
             self._epochs_with_no_improvement += 1
         self._epoch_number += 1
 
-    def add_metrics(self, metrics)e:
+    def add_metrics(self, metrics):
         """
         添加多个metric
         """
@@ -253,7 +254,7 @@ class TensorBoardWriter(object):
         self._should_log_learning_rate = should_log_learning_rate
         self._get_batch_num_total = get_batch_num_total
 
-    def _item(value):
+    def _item(self, value):
         if hasattr(value, 'item'):
             val = value.item()
         else:
