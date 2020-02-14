@@ -59,6 +59,7 @@ class CnnMaxpoolLayer(nn.Module):
 
         if mask is not None:
             mask = mask.unsquuze(1) # [b, 1, l]
+            #mask对conv操作没有影响，但是可能对max_pool操作产生影响，在max_pool之前对mask填充-inf
             conv_res = [x.masked_fill_(mask, float('-inf')) for x in conv_res]
 
         tmp = [F.max_pool1d(input=x, kernel_size=x.size(2)).squeeze(2) for x in conv_res]

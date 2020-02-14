@@ -18,13 +18,13 @@ logger = logging.getLogger(__name__)
 
 class Trainer(object):
     def __init__(self, model, train_iter, val_iter,
-                    optimizer, num_epochs,
+                    optimizer, num_epochs, test_iter=None,
                     loss=None, metric="F1Measure", label_index=1,
                     serialization_dir=None,
-                    patience=None, validation_metric="-loss",
+                    patience=None, validation_metric="+f1_measure",
                     device=-1, grad_norm=None, grad_clipping=None,
-                    learning_rate_scheduler=None, summary_interval=1,
-                    histogram_interval=1, should_log_parameter_statistics=True,
+                    learning_rate_scheduler=None, summary_interval=200,
+                    histogram_interval=200, should_log_parameter_statistics=False,
                     should_log_learning_rate=False, log_batch_size_period=False,
                     num_serialized_models_to_keep=20, **kwargs):          
         """
@@ -54,9 +54,11 @@ class Trainer(object):
         self.num_epochs = num_epochs
         self.train_iter = train_iter
         self.val_iter = val_iter
+        self.test_iter = test_iter
         self.serialization_dir = serialization_dir
         self.cuda_device = device
         self.learning_rate_scheduler = learning_rate_scheduler
+        self.label_index = label_index
 
         if self.cuda_device != -1:
             self.model =self.model.to(self.cuda_device)
@@ -89,7 +91,7 @@ class Trainer(object):
             self.tensorboard.enable_activation_logging(self.model)
 
         self.optimizer = globals()[optimizer](model.parameters())
-        self.metric = globals()[metric](label_index)
+        self.metric = globals()[metric](self.label_index)
         self.loss_func = globals()[loss]()
 
     def rescale_gradients(self):
@@ -170,8 +172,15 @@ class Trainer(object):
 
             self.save_checkpoint(epoch)
             train_epoch += 1
-            
 
+        if self.test_iter is not None:
+            self.model.load_state_dict(torch.load(os.path.join(self.serialization_dir, "best.th")))
+            test_loss, test_batches = self.val_epoch(mode="test")
+            test_metrics = self.get_metrics(test_loss, test_batches, reset=True)
+            test_metrics["label_index"] = self.label_index
+            if self.serialization_dir is not None:
+                dump_metrics(os.path.join(self.serialization_dir, f'test_metrics'), test_metrics)
+            
         return metrics
 
     def save_checkpoint(self, epoch):
@@ -310,13 +319,19 @@ class Trainer(object):
         self.metric(logits, label)
         return loss
 
-    def val_epoch(self):
-        logger.info("Validating")
+    def val_epoch(self, mode="val"):
+        if mode == "val":
+            logger.info("Validating")
+            data_iter = self.val_iter
+        else:
+            logging.info("Test")
+            data_iter = self.test_iter
+
         self.model.eval()
         batches_this_epoch = 0
         val_loss = 0.0
 
-        for batch_group in self.val_iter:
+        for batch_group in data_iter:
             loss = self.batch_loss(batch_group)
 
             if loss is not None:

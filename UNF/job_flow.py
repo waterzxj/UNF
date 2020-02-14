@@ -12,8 +12,7 @@ from training.learner_loader import LearnerLoader
 data_loader = DataLoader(data_loader_conf)
 train_iter, dev_iter, test_iter = data_loader.generate_dataset()
 model = ModelLoader.from_params(model_conf, data_loader.fields)
-print(model)
-learner = LearnerLoader.from_params(model, train_iter, dev_iter, learner_conf)
+learner = LearnerLoader.from_params(model, train_iter, dev_iter, learner_conf, test_iter=test_iter, fields=data_loader.fields)
 
 learner.learn()
 
