@@ -8,6 +8,7 @@ sys.path.append("training/learner_util")
 
 from learner_util import MetricTracker, rescale_gradients, TensorBoardWriter
 from learner_util import dump_metrics, Checkpointer, enable_gradient_clipping
+from learner_util import generate_mask
 from metric import *
 from loss import *
 from optimizer import *
@@ -26,7 +27,8 @@ class Trainer(object):
                     learning_rate_scheduler=None, summary_interval=200,
                     histogram_interval=200, should_log_parameter_statistics=False,
                     should_log_learning_rate=False, log_batch_size_period=False,
-                    num_serialized_models_to_keep=20, **kwargs):          
+                    num_serialized_models_to_keep=20, sequence_model=False,
+                     **kwargs):          
         """
         训练过程的封装
 
@@ -58,6 +60,7 @@ class Trainer(object):
         self.serialization_dir = serialization_dir
         self.cuda_device = device
         self.learning_rate_scheduler = learning_rate_scheduler
+        self.sequence_model = sequence_model
         self.label_index = label_index
 
         if self.cuda_device != -1:
@@ -91,7 +94,11 @@ class Trainer(object):
             self.tensorboard.enable_activation_logging(self.model)
 
         self.optimizer = globals()[optimizer](model.parameters())
-        self.metric = globals()[metric](self.label_index)
+        if not self.sequence_model:
+            self.metric = globals()[metric](self.label_index)
+        else:
+            self.metric = globals()[metric](self.label_index)
+            
         self.loss_func = globals()[loss]()
 
     def rescale_gradients(self):
@@ -309,12 +316,25 @@ class Trainer(object):
         """
         每个batch的数据得到loss
         """
-        data, label = batch_group
+        #todo 序列标注的数据处理
+        if self.sequence_model:
+            (data, data_seq_length), label = batch_group
+            seq_len = data.size(1)
+            batch_size = data.size(0)
+            mask = generate_mask(data_seq_length, seq_len, batch_size)
+        else:
+            data, label = batch_group
+
         if self.cuda_device != -1:
             data, label = data.to(self.cuda_device), label.to(self.cuda_device)
-        logits = self.model(data)["logits"]
-        #计算loss
-        loss = self.loss_func(logits, label)
+        if self.sequence_model:
+            res = self.model.calculate_loss(data, data_seq_length, label, mask)
+            logits = res["logits"]
+            loss = res["loss"]
+        else:
+            logits = self.model(data)["logits"]
+            #计算loss
+            loss = self.loss_func(logits, label)
         #更新metric
         self.metric(logits, label)
         return loss

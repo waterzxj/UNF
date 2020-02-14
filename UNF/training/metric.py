@@ -2,6 +2,9 @@
 
 import torch
 
+from learner_util import get_ner_BIO
+
+
 class Metric(object):
     def __call__(self,
                  predictions,
@@ -45,6 +48,7 @@ class F1Measure(Metric):
         """
         准确率、召回率、F值的评价指标
         """
+        super(F1Measure, self).__init__()
         self._positive_label = positive_label
         self._true_positives = 0.0
         self._true_negatives = 0.0
@@ -111,5 +115,69 @@ class F1Measure(Metric):
         self._true_negatives = 0.0
         self._false_positives = 0.0
         self._false_negatives = 0.0
+
+
+class NerF1Measure(Metric):
+    def __init__(self):
+        self.golden_num = 0.0
+        self.predict_num = 0.0
+        self.right_num = 0.0
+
+    def reset(self):
+        """
+        重置内部状态
+        """
+        self.golden_num = 0.0
+        self.predict_num = 0.0
+        self.right_num = 0.0
+
+    def get_metric(self, reset=False):
+        """
+        返回metric的指标
+        """
+        if self.predict_num == 0.0:
+            precision = -1
+        else:
+            precision = (self.right_num+0.0)/self.predict_num
+
+        if self.golden_num == 0.0:
+            recall = -1
+        else:
+            recall = (self.right_num+0.0)/self.golden_num
+
+        if (precision == -1) or (recall == -1) or (precision+recall) <= 0.:
+            f_measure = -1
+        else:
+            f_measure = 2*precision*recall/(precision+recall)
+
+        if reset:
+            self.reset()
+
+        return {"precision":precision, "recall": recall, "f1_measure":f_measure}
+
+    def update(self, gold_matrix, pred_matrix, mask):
+        right_ner = list(set(gold_matrix).intersection(set(pred_matrix)))
+        self.golden_num += len(gold_matrix)
+        self.predict_num += len(pred_matrix)
+        self.right_num += len(right_ner)
+
+    def __call__(self,
+                 predictions,
+                 gold_labels,
+                 mask=None):
+        """
+        metric的抽象类
+
+        :params predictions 预测结果的tensor
+        :params gold_labels 实际结果的tensor
+        :mask   mask
+        """
+        #TODO：mask调label
+        gold_matrix = get_ner_BIO(gold_labels)
+        pred_matrix = get_ner_BIO(predictions)
+        self.update(gold_matrix, pred_matrix, mask)
+
+
+
 
 

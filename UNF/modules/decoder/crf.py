@@ -26,6 +26,9 @@ def log_sum_exp(vec, m_size):
 class CRF(nn.Module):
 
     def __init__(self, tagset_size, gpu):
+        """
+        Todo: gpudevice的设置改造
+        """
         super(CRF, self).__init__()
         print("build CRF...")
         self.gpu = gpu

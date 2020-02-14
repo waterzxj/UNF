@@ -514,3 +514,68 @@ def dump_metrics(file_path, metrics, log=False):
         metrics_file.write(metrics_json)
     if log:
         logger.info("Metrics: %s", metrics_json)
+
+
+def generate_mask(data_seq_length, seq_size, batch_size):
+    """
+    根据batch中每个sequence的实际长度和batch中最长sequence生成batch mask
+    """
+    mask = torch.zeros((batch_size, seq_size)).byte()
+    for idx, length in enumerate(data_seq_length):
+        mask[idx, :length] = torch.Tensor([1]*length)
+
+    return mask
+
+def get_ner_BIO(label_list):
+    list_len = len(label_list)
+    begin_label = 'B-'
+    inside_label = 'I-'
+    whole_tag = ''
+    index_tag = ''
+    tag_list = []
+    stand_matrix = []
+    for i in range(0, list_len):
+        # wordlabel = word_list[i]
+        current_label = label_list[i].upper()
+        if begin_label in current_label:
+            if index_tag == '':
+                whole_tag = current_label.replace(begin_label,"",1) +'[' +str(i)
+                index_tag = current_label.replace(begin_label,"",1)
+            else:
+                tag_list.append(whole_tag + ',' + str(i-1))
+                whole_tag = current_label.replace(begin_label,"",1)  + '[' + str(i)
+                index_tag = current_label.replace(begin_label,"",1)
+
+        elif inside_label in current_label:
+            if current_label.replace(inside_label,"",1) == index_tag:
+                whole_tag = whole_tag
+            else:
+                if (whole_tag != '')&(index_tag != ''):
+                    tag_list.append(whole_tag +',' + str(i-1))
+                whole_tag = ''
+                index_tag = ''
+        else:
+            if (whole_tag != '')&(index_tag != ''):
+                tag_list.append(whole_tag +',' + str(i-1))
+            whole_tag = ''
+            index_tag = ''
+
+    if (whole_tag != '')&(index_tag != ''):
+        tag_list.append(whole_tag)
+    tag_list_len = len(tag_list)
+
+    for i in range(0, tag_list_len):
+        if  len(tag_list[i]) > 0:
+            tag_list[i] = tag_list[i]+ ']'
+            insert_list = reverse_style(tag_list[i])
+            stand_matrix.append(insert_list)
+    return stand_matrix
+
+
+def reverse_style(input_string):
+    target_position = input_string.index('[')
+    input_len = len(input_string)
+    output_string = input_string[target_position:input_len] + input_string[0:target_position]
+    return output_string
+
+    
