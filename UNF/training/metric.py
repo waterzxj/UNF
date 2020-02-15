@@ -118,10 +118,11 @@ class F1Measure(Metric):
 
 
 class NerF1Measure(Metric):
-    def __init__(self):
+    def __init__(self, label_vocab):
         self.golden_num = 0.0
         self.predict_num = 0.0
         self.right_num = 0.0
+        self.label_vocab = label_vocab
 
     def reset(self):
         """
@@ -155,7 +156,7 @@ class NerF1Measure(Metric):
 
         return {"precision":precision, "recall": recall, "f1_measure":f_measure}
 
-    def update(self, gold_matrix, pred_matrix, mask):
+    def update(self, gold_matrix, pred_matrix):
         right_ner = list(set(gold_matrix).intersection(set(pred_matrix)))
         self.golden_num += len(gold_matrix)
         self.predict_num += len(pred_matrix)
@@ -172,10 +173,23 @@ class NerF1Measure(Metric):
         :params gold_labels 实际结果的tensor
         :mask   mask
         """
-        #TODO：mask调label
-        gold_matrix = get_ner_BIO(gold_labels)
-        pred_matrix = get_ner_BIO(predictions)
-        self.update(gold_matrix, pred_matrix, mask)
+        batch_size = gold_labels.size(0)
+        seq_len = gold_labels.size(1)
+        predictions, gold_labels, mask = self.unwrap_to_tensors(predictions, gold_labels,
+            mask)
+
+        predictions = predictions.tolist()
+        gold_labels = gold_labels.tolist()
+        mask = mask.tolist()
+
+        for idx in range(batch_size):
+            pred = [self.label_vocab[predictions[idx][idy]] for idy in range(seq_len) if mask[idx][idy] != 0]
+            gold = [self.label_vocab[gold_labels[idx][idy]] for idy in range(seq_len) if mask[idx][idy] != 0]
+
+
+        gold_matrix = get_ner_BIO(gold)
+        pred_matrix = get_ner_BIO(pred)
+        self.update(gold_matrix, pred_matrix)
 
 
 

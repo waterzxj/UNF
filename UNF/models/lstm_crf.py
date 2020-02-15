@@ -12,9 +12,9 @@ from modules.encoder.lstm_encoder import LstmEncoderLayer
 from modules.decoder.crf import CRF
 
 class LstmCrfTagger(Model):
-    def __init__(self, input_dim, vocab_size,
-                hidden_size, num_layers, tagset_size, use_crf=True,
-                bidirection=True, batch_first=True, device="cpu",
+    def __init__(self, label_nums, vocab_size, input_dim,
+                hidden_size, num_layers, use_crf=True,
+                bidirection=True, batch_first=True, device=None,
                 dropout=0.0, averge_batch_loss=True, **kwargs):
         """
         ref: Neural Architectures for Named Entity Recognition
@@ -22,19 +22,20 @@ class LstmCrfTagger(Model):
 
         :params 
         """
+        super(LstmCrfTagger, self).__init__()
         self.embedding = TokenEmbedding(input_dim, vocab_size)
         #加载预训练的词向量
         if "pretrain" in kwargs:
             if kwargs["pretrain"]:
                 self.embedding.from_pretrained(kwargs['vectors'])
 
-        self.encoder = LstmEncoderLayer(input_dim, hidden_size, num_layers, 
+        self.encoder = LstmEncoderLayer(input_dim, hidden_size, num_layers, label_nums=label_nums,
                 bidirectional=bidirection, batch_first=batch_first, dropout=dropout)
 
         self.averge_batch_loss = averge_batch_loss
         self.use_crf = use_crf
         if self.use_crf:
-            self.decoder = CRF(tagset_size, device)
+            self.decoder = CRF(label_nums, device)
 
     def forward(self, input, input_seq_length, mask=None):
         embedding = self.embedding(input) #batch_size * seq_len * input_dim

@@ -22,6 +22,13 @@ class LearnerLoader(object):
                 logger.info("Label vocab: %s" % fields["LABEL"][1].vocab.stoi)
                 return Trainer(model, train_iter, dev_iter,
                         **learner_conf, test_iter=test_iter, label_index=label_index)
+        if "sequence_model" in learner_conf and learner_conf["sequence_model"]:
+            assert fields is not None, "sequence model need target vocab"
+            vocab = fields["LABEL"][1].vocab.itos
+
+            return Trainer(model, train_iter, dev_iter,
+                        **learner_conf, test_iter=test_iter, label_vocab=vocab)
+
 
         return Trainer(model, train_iter, dev_iter,
                         **learner_conf, test_iter=test_iter)

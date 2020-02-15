@@ -7,6 +7,7 @@ sys.path.append("models")
 
 from fasttext import FastText
 from textcnn import TextCnn
+from lstm_crf import LstmCrfTagger
 
 class ModelLoader(object):
 
@@ -29,7 +30,7 @@ class ModelLoader(object):
                 extra["vectors"] = fields[name].vocab.vectors
 
       
-            return globals()[model_conf["encoder_cls"]](label_num=label_num, vocab_size=vocab_size, 
+            return globals()[model_conf["encoder_cls"]](label_nums=label_num, vocab_size=vocab_size, 
                         **model_conf["encoder_params"], **extra)
         else:
             #多域模型

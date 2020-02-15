@@ -21,7 +21,7 @@ class Trainer(object):
     def __init__(self, model, train_iter, val_iter,
                     optimizer, num_epochs, test_iter=None,
                     loss=None, metric="F1Measure", label_index=1,
-                    serialization_dir=None,
+                    serialization_dir=None, label_vocab=None,
                     patience=None, validation_metric="+f1_measure",
                     device=-1, grad_norm=None, grad_clipping=None,
                     learning_rate_scheduler=None, summary_interval=200,
@@ -52,7 +52,6 @@ class Trainer(object):
         """
         
         self.model = model
-        self.loss = loss
         self.num_epochs = num_epochs
         self.train_iter = train_iter
         self.val_iter = val_iter
@@ -62,6 +61,7 @@ class Trainer(object):
         self.learning_rate_scheduler = learning_rate_scheduler
         self.sequence_model = sequence_model
         self.label_index = label_index
+        self.label_vocab = label_vocab
 
         if self.cuda_device != -1:
             self.model =self.model.to(self.cuda_device)
@@ -97,9 +97,10 @@ class Trainer(object):
         if not self.sequence_model:
             self.metric = globals()[metric](self.label_index)
         else:
-            self.metric = globals()[metric](self.label_index)
+            self.metric = globals()[metric](self.label_vocab)
             
-        self.loss_func = globals()[loss]()
+        if loss is not None:
+            self.loss_func = globals()[loss]()
 
     def rescale_gradients(self):
         return rescale_gradients(self.model, self.grad_norm)
@@ -316,9 +317,12 @@ class Trainer(object):
         """
         每个batch的数据得到loss
         """
-        #todo 序列标注的数据处理
         if self.sequence_model:
-            (data, data_seq_length), label = batch_group
+            tmp = batch_group.TEXT
+            label = batch_group.LABEL.t()
+            data = tmp[0].t()
+            data_seq_length = tmp[1]
+
             seq_len = data.size(1)
             batch_size = data.size(0)
             mask = generate_mask(data_seq_length, seq_len, batch_size)
@@ -327,6 +331,7 @@ class Trainer(object):
 
         if self.cuda_device != -1:
             data, label = data.to(self.cuda_device), label.to(self.cuda_device)
+            mask = mask.to(self.cuda_device)
         if self.sequence_model:
             res = self.model.calculate_loss(data, data_seq_length, label, mask)
             logits = res["logits"]
@@ -336,7 +341,7 @@ class Trainer(object):
             #计算loss
             loss = self.loss_func(logits, label)
         #更新metric
-        self.metric(logits, label)
+        self.metric(logits, label, mask)
         return loss
 
     def val_epoch(self, mode="val"):

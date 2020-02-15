@@ -18,14 +18,16 @@ data_loader_conf = {
         "name_cls":"WordField",
         "attrs":{
             "tokenize":"WhitespaceTokenizer",
+            "include_lengths": True
             }
         },
         {
             "name":"LABEL",
-            "name_cls":"LabelField",
+            "name_cls":"Field",
             "attrs":{
                 "tokenize":"WhitespaceTokenizer",
-                "sequential": True
+                "sequential": True,
+                "unk_token": None
             }
         }],
     "iterator":{
@@ -38,13 +40,12 @@ data_loader_conf = {
 model_conf = [
     {
         "name": "TEXT",
-        "encoder_cls": "TextCnn",
+        "encoder_cls": "LstmCrfTagger",
         "encoder_params": {
             "input_dim": 100,
-            "filter_num": 100,
-            "filter_size": [1,2,3,4],
-            "dropout": 0.1,
-            "pretrained": False,
+            "hidden_size": 200,
+            "num_layers": 3,
+            "device": "cuda:1"
         }
     }
 ]
@@ -66,7 +67,8 @@ learner_conf = {
         "lr": 1e-5
     },
     "device": "cuda:1",
-    "loss": "CrossEntropyLoss",
-    "serialization_dir": "model_save"
+    "serialization_dir": "model_lstm",
+    "sequence_model": True,
+    "metric": "NerF1Measure"
 }
 

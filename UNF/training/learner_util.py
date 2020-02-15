@@ -520,6 +520,7 @@ def generate_mask(data_seq_length, seq_size, batch_size):
     """
     根据batch中每个sequence的实际长度和batch中最长sequence生成batch mask
     """
+    data_seq_length = data_seq_length.detach().cpu().tolist()
     mask = torch.zeros((batch_size, seq_size)).byte()
     for idx, length in enumerate(data_seq_length):
         mask[idx, :length] = torch.Tensor([1]*length)
@@ -528,8 +529,8 @@ def generate_mask(data_seq_length, seq_size, batch_size):
 
 def get_ner_BIO(label_list):
     list_len = len(label_list)
-    begin_label = 'B-'
-    inside_label = 'I-'
+    begin_label = 'B_'
+    inside_label = 'I_'
     whole_tag = ''
     index_tag = ''
     tag_list = []
