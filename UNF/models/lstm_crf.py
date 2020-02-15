@@ -78,6 +78,12 @@ class LstmCrfTagger(Model):
 
         return {"loss":total_loss, "logits": tag_seq}
 
+    def predict(self, input):
+        input_seq_length = input.size(0)
+        res = self.forward(input, input_seq_length)
+        return res["logits"]
+
+
         
 
 
