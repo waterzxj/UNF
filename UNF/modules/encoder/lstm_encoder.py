@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 
 class LstmEncoderLayer(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, label_nums,
+    def __init__(self, input_size, hidden_size, num_layers, label_nums=None,
                 batch_first=True, bidirectional=False, dropout=0.0):
         """"
         Lstm编码器的封装
@@ -29,7 +29,10 @@ class LstmEncoderLayer(nn.Module):
                     bidirectional=bidirectional)
 
         self.lstm_dropout = nn.Dropout(dropout)
-        self.hidden2tags = nn.Linear(hidden_size, label_nums+2)
+        self.label_nums = label_nums
+
+        if self.label_nums:
+            self.hidden2tags = nn.Linear(hidden_size, label_nums)
     
     def forward(self, input, input_seq_lengths, batch_first=True, is_sort=False):
         """
@@ -51,7 +54,8 @@ class LstmEncoderLayer(nn.Module):
             _, word_seq_recover = word_perm_idx.sort(0, descending=False)
             lstm_out = lstm_out[word_seq_recover]
             
-        feature_out = self.lstm_dropout(lstm_out) #batch * seq_len * (hidden_dim*directions)
-        outputs = self.hidden2tags(feature_out)
+        outputs = self.lstm_dropout(lstm_out) #batch * seq_len * (hidden_dim*directions)
+        if self.label_nums:
+            outputs = self.hidden2tags(outputs)
 
         return outputs

@@ -41,7 +41,7 @@ class TextCnn(Model):
         self.dropout = nn.Dropout(p=dropout)
         self.fc = nn.Linear(sum(filter_num), label_num)
 
-    def forward(self, input, mask=None):
+    def forward(self, input, label=None, mask=None):
         input = torch.transpose(input, 0, 1)
         x = self.embedding(input)
         output = self.encoder(x, mask) #[b * l]

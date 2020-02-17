@@ -49,6 +49,7 @@ class Trainer(object):
         :params should_log_learning_rate bool 是否将训练的learningrate传给tensorboard
         :params log_batch_size_period int 将batch_size信息传递给tensorboard的频率
         :params num_serialized_models_to_keep int 模型的前多少epoch保存checkpoint，默认为20
+        :params sequence_model bool 模型输入是否需要传入seq_length，和lstm做兼容
         """
         
         self.model = model
@@ -347,18 +348,26 @@ class Trainer(object):
             mask = generate_mask(data_seq_length, seq_len, batch_size)
         else:
             data, label = batch_group
+            mask = None #mask计算todo
 
         if self.cuda_device != -1:
             data, label = data.to(self.cuda_device), label.to(self.cuda_device)
-            mask = mask.to(self.cuda_device)
+            if mask:
+                mask = mask.to(self.cuda_device)
+
         if self.sequence_model:
-            res = self.model.calculate_loss(data, data_seq_length, label, mask)
-            logits = res["logits"]
-            loss = res["loss"]
+            res = self.model(data, data_seq_length, label, mask)
         else:
-            logits = self.model(data)["logits"]
-            #计算loss
+            res = self.model(data, label, mask)
+
+        #计算loss
+        logits = res["logits"]
+        if "loss" not in res:
             loss = self.loss_func(logits, label)
+            if "coefficient" in res:
+                loss += res["coefficient"] * res["regulariration_loss"]
+        else:
+            loss = res["loss"]
         #更新metric
         self.metric(logits, label, mask)
         return loss

@@ -2,6 +2,7 @@
 import torch.nn.init as init
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 
 from base_type import InitType, FAN_MODE, ActivationType
 
@@ -96,3 +97,16 @@ def initial_parameter(net, initial_method=None):
                 # print("init else")
 
     net.apply(weights_init)
+
+
+def mask_softmax(input, dim, mask=None):
+    """
+    根据dim和mask，对input做softmax的操作
+    """
+    if not mask:
+        return F.softmax(input, dim=dim)
+
+    else:
+        masked_input = input.mask_fill((1 - mask).byte(), -1e32)
+        return F.softmax(masked_input, dim=dim)
+
