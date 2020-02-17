@@ -53,14 +53,12 @@ class CnnMaxpoolLayer(nn.Module):
         :params: input torch.Tensor [batch_size, length, dim]
         :params: mask torch.Tensor [batch_size, length]
         """
+        if mask is not None:
+            input = input * mask.unsqueeze(-1).float()
+
         #[b, l, d] -> [b, d, l]
         input = torch.transpose(input, 1, 2)
         conv_res = [self.activation(conv(input)) for conv in self.convs] #[b, o, lout]
-
-        if mask is not None:
-            mask = mask.unsquuze(1) # [b, 1, l]
-            #mask对conv操作没有影响，但是可能对max_pool操作产生影响，在max_pool之前对mask填充-inf
-            conv_res = [x.masked_fill_((1-mask).byte(), float('-inf')) for x in conv_res]
 
         tmp = [F.max_pool1d(input=x, kernel_size=x.size(2)).squeeze(2) for x in conv_res]
         return torch.cat(tmp, dim=-1)
