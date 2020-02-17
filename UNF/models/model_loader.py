@@ -23,15 +23,18 @@ class ModelLoader(object):
             else:
                 label_num = model_conf["label_num"]
 
+            model_conf["encoder_params"]["label_nums"] = label_num
+
             vocab_size = len(fields[name][1].vocab.stoi)
+            model_conf["encoder_params"]["vocab_size"] = vocab_size
         
             encoder_params = model_conf["encoder_params"]
             if "pretrained" in encoder_params and encoder_params["pretrained"]:
                 extra["vectors"] = fields[name].vocab.vectors
 
       
-            return globals()[model_conf["encoder_cls"]](label_nums=label_num, vocab_size=vocab_size, 
-                        **model_conf["encoder_params"], **extra)
+            return globals()[model_conf["encoder_cls"]](**model_conf["encoder_params"], **extra), \
+                    model_conf["encoder_params"]
         else:
             #多域模型
             pass

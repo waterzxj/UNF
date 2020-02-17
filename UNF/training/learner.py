@@ -27,8 +27,8 @@ class Trainer(object):
                     learning_rate_scheduler=None, summary_interval=200,
                     histogram_interval=200, should_log_parameter_statistics=False,
                     should_log_learning_rate=False, log_batch_size_period=False,
-                    num_serialized_models_to_keep=20, sequence_model=False,
-                     **kwargs):          
+                    num_serialized_models_to_keep=20, sequence_model=False, fields=None,
+                     model_conf=None, **kwargs):          
         """
         训练过程的封装
 
@@ -62,6 +62,8 @@ class Trainer(object):
         self.sequence_model = sequence_model
         self.label_index = label_index
         self.label_vocab = label_vocab
+        self.fields = fields
+        self.model_conf = model_conf
 
         if self.cuda_device != -1:
             self.model =self.model.to(self.cuda_device)
@@ -188,8 +190,25 @@ class Trainer(object):
             test_metrics["label_index"] = self.label_index
             if self.serialization_dir is not None:
                 dump_metrics(os.path.join(self.serialization_dir, f'test_metrics'), test_metrics)
+
+        self.dump_info()
             
         return metrics
+
+    def dump_info(self):
+        #dump词表
+        vocab_path = os.path.join(self.serialization_dir, "vocab.txt")
+        vocab = self.fields["TEXT"][1].vocab.itos
+        dump_metrics(vocab_path, vocab)
+
+        #dump target
+        target_path = os.path.join(self.serialization_dir, "target.txt")
+        target = self.fields["LABEL"][1].vocab.itos
+        dump_metrics(target_path,target)
+
+        #dump model
+        model_path = os.path.join(self.serialization_dir, "conf.json")
+        dump_metrics(model_path, self.model_conf)
 
     def save_checkpoint(self, epoch):
         """

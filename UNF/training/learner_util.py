@@ -509,7 +509,7 @@ def clamp_tensor(tensor, minimum, maximum):
         return tensor.clamp(minimum, maximum)
 
 def dump_metrics(file_path, metrics, log=False):
-    metrics_json = json.dumps(metrics, indent=2)
+    metrics_json = json.dumps(metrics, indent=2, ensure_ascii=False)
     with open(file_path, "w") as metrics_file:
         metrics_file.write(metrics_json)
     if log:

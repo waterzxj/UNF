@@ -6,7 +6,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from model import Model
+from models.model import Model
 from modules.embedding.embedding import TokenEmbedding
 from modules.encoder.lstm_encoder import LstmEncoderLayer
 from modules.decoder.crf import CRF
@@ -78,9 +78,9 @@ class LstmCrfTagger(Model):
 
         return {"loss":total_loss, "logits": tag_seq}
 
-    def predict(self, input):
-        input_seq_length = input.size(0)
-        res = self.forward(input, input_seq_length)
+    def predict(self, input, input_seq_length, mask):
+        input = input.unsqueeze(0)
+        res = self.forward(input, input_seq_length, mask)
         return res["logits"]
 
 

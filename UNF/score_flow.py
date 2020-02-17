@@ -35,11 +35,11 @@ if __name__ == "__main__":
     predictor = LstmCrfPredictor(model_path, device)
 
     #step2 开始预测
-    save_path = os.path.join(model_path, args.save_path)
+    save_path = open(os.path.join(model_path, args.save_path), "w")
     for line in open(args.test_path):
         line = json.loads(line.rstrip())
         pred = predictor.predict(line["TEXT"])
-        save_path.write("%s\t%s\t%s\n" % (line["TEXT"], line["LABEL"], " ".join(pred))
+        save_path.write("%s\t%s\t%s\n" % (line["TEXT"], line["LABEL"], " ".join(pred)))
 
     save_path.close()
 
