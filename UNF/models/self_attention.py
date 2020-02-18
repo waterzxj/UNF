@@ -17,25 +17,20 @@ class SelfAttention(Model):
                 hidden_size, layer_num, attention_num, coefficient=0.1, bidirection=True, 
                 batch_first=True, device=None,
                 dropout=0.0, averge_batch_loss=True, **kwargs):
-    """
-    Implemention: A STRUCTURED SELF-ATTENTIVE SENTENCE EMBEDDING
+        """
+        Implemention: A STRUCTURED SELF-ATTENTIVE SENTENCE EMBEDDING
 
-    :params label_nums int 输出label的数量
-    :params vocab_size int 词表大小
-    :params input_dim int 输入词表维度
-    :params hidden_size int 隐藏层的维度
-    :params layer_num int 隐藏层的层数
-    :params attention_num int attention的个数
-    :params coefficient float 正则化系数
-    """
-    super(SelfAttention, self).__init__()
-    self.coefficient = coefficient
-    self.embedding = TokenEmbedding(input_dim, vocab_size)
-        #加载预训练的词向量
-        if "pretrain" in kwargs:
-            if kwargs["pretrain"]:
-                self.embedding.from_pretrained(kwargs['vectors'])
-
+        :params label_nums int 输出label的数量
+        :params vocab_size int 词表大小
+        :params input_dim int 输入词表维度
+        :params hidden_size int 隐藏层的维度
+        :params layer_num int 隐藏层的层数
+        :params attention_num int attention的个数
+        :params coefficient float 正则化系数
+        """
+        super(SelfAttention, self).__init__(input_dim, vocab_size, **kwargs)
+        self.coefficient = coefficient
+    
         self.encoder = LstmEncoderLayer(input_dim, hidden_size, num_layers, label_nums=label_nums,
                 bidirectional=bidirection, batch_first=batch_first, dropout=dropout)
 

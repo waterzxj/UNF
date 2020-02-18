@@ -8,7 +8,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from model import Model
+from models.model import Model
 from modules.embedding.embedding import TokenEmbedding
 from modules.encoder.cnn_maxpool import CnnMaxpoolLayer
 
@@ -21,9 +21,9 @@ class TextCnn(Model):
                 vocab_size,
                 filter_size,
                 filter_num,
-                label_num, 
+                label_nums, 
                 dropout, **kwargs):
-        super(TextCnn, self).__init__()
+        super(TextCnn, self).__init__(input_dim, vocab_size, **kwargs)
         if not isinstance(filter_size, (tuple, list)):
             filter_size = [filter_size]
 
@@ -31,15 +31,10 @@ class TextCnn(Model):
             filter_num = len(filter_size) * [filter_num]
 
         self.encoder = CnnMaxpoolLayer(input_dim,
-        filter_num, filter_size, **kwargs)
-        self.embedding = TokenEmbedding(input_dim, vocab_size)
-        #加载预训练的词向量
-        if "pretrain" in kwargs:
-            if kwargs["pretrain"]:
-                self.embedding.from_pretrained(kwargs['vectors'])
+                    filter_num, filter_size, **kwargs)
         
         self.dropout = nn.Dropout(p=dropout)
-        self.fc = nn.Linear(sum(filter_num), label_num)
+        self.fc = nn.Linear(sum(filter_num), label_nums)
 
     def forward(self, input, label=None, mask=None):
         input = torch.transpose(input, 0, 1)
