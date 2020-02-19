@@ -1,12 +1,11 @@
 #coding:utf-8
 import os
 import sys
-sys.path.append("modules")
 import torch
 from torch import nn
 import torch.nn.functional as F
 
-from module_util import initial_parameter
+from modules.module_util import initial_parameter
 
 
 class CnnMaxpoolLayer(nn.Module):
@@ -46,7 +45,8 @@ class CnnMaxpoolLayer(nn.Module):
         else:
             raise Exception("%s activation not support" % activation)
 
-        initial_parameter(self, initial_method)
+        #使用默认初始化
+        #initial_parameter(self, initial_method)
 
     def forward(self, input, mask=None):
         """
