@@ -8,6 +8,8 @@ sys.path.append("models")
 from fasttext import FastText
 from textcnn import TextCnn
 from lstm_crf import LstmCrfTagger
+from dpcnn import DpCnn
+
 
 class ModelLoader(object):
 

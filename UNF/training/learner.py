@@ -348,6 +348,7 @@ class Trainer(object):
             mask = generate_mask(data_seq_length, seq_len, batch_size)
         else:
             data, label = batch_group
+            data = data.t() 
             mask = None #mask计算todo
 
         if self.cuda_device != -1:
