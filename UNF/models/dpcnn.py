@@ -68,3 +68,16 @@ class DpCnn(Model):
 
         logits = self.dropout(self.linear(doc_embedding))
         return {"logits": logits}
+
+    def predict(self, input, label=None, mask=None):
+        return self.forward(input, label, mask)["logits"]
+
+
+        
+
+
+
+
+
+
+

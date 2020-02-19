@@ -8,10 +8,10 @@ iterator: 提供迭代的配置，包括每个batch大小，device是cpu还是gp
 #data_loader相关
 data_loader_conf = {
     "dataset":{
-        "path":"test/test_data/aclImdb",
-        "train":"train",
-        "test":"test",
-        "format":"json"
+        "path": "test/test_data/aclImdb",
+        "train": "train",
+        "test": "test",
+        "format": "json"
     },
     "fields":[{
         "name":"TEXT",
@@ -56,13 +56,14 @@ decoder_conf = {
 
 #learner相关的
 learner_conf = {
-    "num_epochs": 10,
+    "num_epochs": 20,
     "optimizer": "Adam",
     "optimizer_parmas": {
-        "lr": 1e-5
+        "lr": 1e-4
     },
     "device": "cuda:1",
     "loss": "CrossEntropyLoss",
-    "serialization_dir": "model_save"
+    "serialization_dir": "imdb_textcnn",
+    "label_tag": "pos"
 }
 

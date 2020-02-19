@@ -17,10 +17,13 @@ class FastText(Model):
         self.hidden_fc = nn.Linear(config.embedding_dim, config.hidden_dim)
         self.final_fc  = nn.Linear(config.hidden_dim, config.num_labels)
 
-    def forward(self, *arg, **kwarg):
-        embedding_o = self.embedding(arg[0])
+    def forward(self, input, **kwarg):
+        embedding_o = self.embedding(input)
         hidden_fc_o = self.hidden_fc(embedding_o)
         final_fc_o  = self.final_fc(hidden_fc_o)
 
-        return final_fc_o
+        return {"logits": final_fc_o}
+
+    def predict(self, input):
+        return self.forward(input)["logits"]
     

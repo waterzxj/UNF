@@ -31,7 +31,7 @@ class SelfAttention(Model):
         super(SelfAttention, self).__init__(input_dim, vocab_size, **kwargs)
         self.coefficient = coefficient
     
-        self.encoder = LstmEncoderLayer(input_dim, hidden_size, num_layers, label_nums=label_nums,
+        self.encoder = LstmEncoderLayer(input_dim, hidden_size, layer_num, label_nums=label_nums,
                 bidirectional=bidirection, batch_first=batch_first, dropout=dropout)
 
         self.averge_batch_loss = averge_batch_loss
@@ -53,11 +53,14 @@ class SelfAttention(Model):
         output = {}
         output["logits"] = logits
         
-        if self.coefficient:
+        if self.coefficient != 0:
             output["regulariration_loss"] = att_res["regulariration_loss"]
-            output["coefficient"] = coefficient
+            output["coefficient"] = self.coefficient
 
         return output
+
+    def predict(self, input, input_seq_length, label=None, mask=None):
+        return self.forward(input, input_seq_length, label, mask)["logits"]
         
 
 

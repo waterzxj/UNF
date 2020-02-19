@@ -43,6 +43,9 @@ class TextCnn(Model):
         logits = self.fc(output) #[b, label_num]
         return {"logits": logits}
 
+    def predict(self, input, label=None, mask=None):
+        return self.forward(input, label, mask)["logits"]
+
 
 
 

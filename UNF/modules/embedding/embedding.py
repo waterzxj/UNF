@@ -47,7 +47,7 @@ class BaseEmbedding(nn.Module):
 class TokenEmbedding(BaseEmbedding):
     def __init__(self, dim, vocab_size, device=None,
                     dropout=0.0, 
-                    init_type=InitType.UNIFORM,
+                    init_type=InitType.XAVIER_NORMAL,
                     low=0, high=1, mean=0, std=1,
                     activation_type=ActivationType.NONE,
                     fan_mode=FAN_MODE.FAN_IN, negative_slope=0

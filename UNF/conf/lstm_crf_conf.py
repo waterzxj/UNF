@@ -9,8 +9,8 @@ iterator: 提供迭代的配置，包括每个batch大小，device是cpu还是gp
 data_loader_conf = {
     "dataset":{
         "path":"test/test_data/ner",
-        "train":"train_ner",
-        "test":"test_ner",
+        "train":"train_ner_sample",
+        "test":"test_ner_sample",
         "format":"json"
     },
     "fields":[{
@@ -67,7 +67,7 @@ learner_conf = {
         "lr": 1e-5
     },
     "device": "cuda:1",
-    "serialization_dir": "model_lstm",
+    "serialization_dir": "model_lstm_example",
     "sequence_model": True,
     "metric": "NerF1Measure"
 }

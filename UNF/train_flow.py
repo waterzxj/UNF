@@ -3,7 +3,9 @@
 训练一个textcnn文本分类模型的工作流
 """
 import sys
-from conf.lstm_crf_conf import data_loader_conf,model_conf,learner_conf
+#from conf.lstm_crf_conf import data_loader_conf,model_conf,learner_conf
+#from conf.dpcnn_conf import data_loader_conf,model_conf,learner_conf
+from conf.textcnn_conf import data_loader_conf,model_conf,learner_conf
 from data.data_loader import DataLoader
 from models.model_loader import ModelLoader
 from training.learner_loader import LearnerLoader
