@@ -3,12 +3,13 @@
 从配置文件反射到对应的模型
 """
 import sys
-sys.path.append("models")
 
-from fasttext import FastText
-from textcnn import TextCnn
-from lstm_crf import LstmCrfTagger
-from dpcnn import DpCnn
+from models.fasttext import FastText
+from models.textcnn import TextCnn
+from models.lstm_crf import LstmCrfTagger
+from models.dpcnn import DpCnn
+from models.self_attention import SelfAttention
+from models.leam import LEAM
 
 
 class ModelLoader(object):

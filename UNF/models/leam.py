@@ -4,7 +4,7 @@ import sys
 import torch
 from torch import nn
 import torch.nn.functional as F
-import torch.nn.functional.normalize as normalize
+from torch.nn.functional import normalize
 from torch.nn import CrossEntropyLoss
 
 from models.model import Model
@@ -23,7 +23,7 @@ class LEAM(Model):
         params:
         """
         super(LEAM, self).__init__(input_dim, vocab_size, **kwargs)
-        self.label_embedding = TokenEmbedding(input_dim, label_nums)
+        self.label_embedding = TokenEmbedding(input_dim, label_nums) # e * c
         self.label_nums = label_nums
         padding = int(ngrams/2)
         self.active = active
@@ -35,41 +35,45 @@ class LEAM(Model):
         if self.active:
             self.conv = torch.nn.Sequential(
                             torch.nn.Conv1d(
-					            self.label_nums, self.label_nums,
-					            ngrams, padding=padding),
-                            torch.nn.RELU()
+			        self.label_nums, self.label_nums,
+			        ngrams, padding=padding),
+                            torch.nn.ReLU()
                         )
         else:
             self.conv = torch.nn.Conv1d(
-					        self.label_nums, self.label_nums,
-					        ngrams, padding=padding)
+			    self.label_nums, self.label_nums,
+			        ngrams, padding=padding)
 
 
         self.fc1 = FullConnectLayer(input_dim, hidden_dim, dropout, "relu")
         self.fc2 = nn.Linear(hidden_dim, label_nums)
 
     def forward(self, input, label, mask=None):
+        #import pdb;pdb.set_trace()
         word_embedding = self.embedding(input) #b * s * dim
-        label_embedding = self.label_embedding(label) #b * l * dim
-        label_embedding = torch.transpose(label_embedding,(1,2)) #b * dim * l
+        embedding_label = self.label_embedding(label)
+
+        label_embedding = self.label_embedding.embeddings.weight
 
         if mask:
             word_embedding = word_embedding * mask.unsqueeze(-1).float()
 
         if self.norm:
             word_embedding = normalize(word_embedding, dim=2)
-            label_embedding = normalize(label_embedding, dim=1)
+            label_embedding = normalize(label_embedding, dim=1) # l * dim
 
         #Attention操作
-        G = word_embedding @ label_embedding # b * s * l
-        att_v = self.conv(G) #b * s * l
+        G = word_embedding @ label_embedding.transpose(0, 1) # b * s * l
+        att_v = self.conv(G.transpose(1,2)) #b * l * s
+        att_v = att_v.transpose(1,2) #b * s * l
         att_v = F.max_pool1d(att_v, att_v.size(2)) #b * s * 1
 
         att_v = mask_softmax(att_v, 1, mask) #b *s * 1
         H_enc = att_v * word_embedding #b * s * dim
+        att_out = torch.sum(H_enc, 1) # b * dim
 
         #全连接操作
-        tmp = self.fc1(H_enc) #b * s * hidden_dim
+        tmp = self.fc1(att_out) #b * s * hidden_dim
         logits = self.fc2(tmp) #b * s * label_nums
 
         output = {}
@@ -77,7 +81,7 @@ class LEAM(Model):
 
         if self.coefficient != 0:
             output["coefficient"] = self.coefficient
-            tmp = self.fc1(label_embedding) # b * l * hidden_dim
+            tmp = self.fc1(embedding_label) # b * l * hidden_dim
             logits = self.fc2(tmp)
             reg_loss = F.cross_entropy(logits, label)
             output["regulariration_loss"] = reg_loss
@@ -86,20 +90,3 @@ class LEAM(Model):
 
     def predict(self, input, label, mask=None):
         return self.forward(input, label, mask)["logits"]
-
-            
-
-
-
-
-
-
-
-
-
-
-        
-
-
-        
-

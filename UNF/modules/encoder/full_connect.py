@@ -11,6 +11,7 @@ class FullConnectLayer(nn.Module):
         """
         封装torch.nn.Linear(),加入droput和activate
         """
+        super(FullConnectLayer, self).__init__()
         self.fc = nn.Linear(in_features, out_features)
         self.dropout = nn.Dropout(p=dropout)
         self.act = act
