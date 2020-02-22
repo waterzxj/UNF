@@ -7,7 +7,7 @@
 #include "tokenizer.h"
 
 
-int max_seq_length = 8; //hard code, comfortable with the tracing process
+int max_seq_length = 128; //hard code, comfortable with the tracing process
 
 int main(int argc, const char* argv[])
 {

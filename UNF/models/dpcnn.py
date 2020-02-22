@@ -7,9 +7,10 @@ from torch import nn
 import torch.nn.functional as F
 
 from models.model import Model
+from models.model_trace import ModelTrace
 
 
-class DpCnn(Model):
+class DpCnnTrace(ModelTrace):
     def __init__(self, input_dim, vocab_size, label_nums,
                     block_size=16, filter_size=3, filter_num=250,
                     stride=2, dropout=0.0, **kwargs):
@@ -18,7 +19,7 @@ class DpCnn(Model):
 
         :params block_size dpcnn里block的数量，每个block包括两个卷积层和一个max_pooling层
         """
-        super(DpCnn, self).__init__(input_dim, vocab_size, **kwargs)
+        super(DpCnnTrace, self).__init__(input_dim, vocab_size, **kwargs)
         self.filter_num = filter_num
         self.filter_size = filter_size
         self.stride = stride
@@ -67,17 +68,20 @@ class DpCnn(Model):
             block_features, block_features.size(2)).squeeze()
 
         logits = self.dropout(self.linear(doc_embedding))
+        return logits
+
+
+class DpCnn(Model):
+    def __init__(self, input_dim, vocab_size, label_nums,
+                    block_size=16, filter_size=3, filter_num=250,
+                    stride=2, dropout=0.0, **kwargs):
+        super(DpCnn, self).__init__()
+        self.model = DpCnnTrace(input_dim, vocab_size, label_nums, block_size,
+                        filter_size, filter_num, stride, dropout, **kwargs)
+
+    def forward(self, input, mask=None, label=None):
+        logits = self.model(input, mask, label)
         return {"logits": logits}
 
     def predict(self, input, mask=None, label=None):
         return self.forward(input, label, mask)["logits"]
-
-
-        
-
-
-
-
-
-
-

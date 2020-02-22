@@ -5,11 +5,10 @@
 import random
 
 from torchtext.data import Field, Dataset, LabelField, TabularDataset
-#from torchtext import datasets
 from torchtext.data import Iterator, BucketIterator
 
-from .field import *
-from .tokenizer import *
+from data.field import WordField, CharField, SiteField
+from data.tokenizer import BaseTokenizer, WhitespaceTokenizer, SpacyTokenizer
 
 
 class DataLoader(object):
@@ -32,53 +31,50 @@ class DataLoader(object):
 
     def generate_dataset(self):
             
-            fields = self.config["fields"]
-            #step1: Field生成
-            inner_fields = {}
-            for item in fields:
-                f_name = item["name"]
-                f_cls = item["name_cls"]
-                if "attrs" in item:
-                    if "tokenize" in item["attrs"]:
-                        #通过反射拿到tokenize对象
-                        if "language" in item["attrs"]:
-                            item["attrs"]["tokenize"] = globals()[item["attrs"]["tokenize"]](item["attrs"]["language"])
-                        else:
-                            item["attrs"]["tokenize"] = globals()[item["attrs"]["tokenize"]]()
-                    inner_fields[f_name] = (f_name, globals()[f_cls](**item["attrs"]))
+        fields = self.config["fields"]
+        #step1: Field生成
+        inner_fields = {}
+        for item in fields:
+            f_name = item["name"]
+            f_cls = item["name_cls"]
+            if "attrs" in item:
+                if "tokenize" in item["attrs"]:
+                    #通过反射拿到tokenize对象
+                    if "language" in item["attrs"]:
+                        item["attrs"]["tokenize"] = globals()[item["attrs"]["tokenize"]](item["attrs"]["language"])
+                    else:
+                        item["attrs"]["tokenize"] = globals()[item["attrs"]["tokenize"]]()
+                inner_fields[f_name] = (f_name, globals()[f_cls](**item["attrs"]))
+            else:
+                inner_fields[f_name] = (f_name, globals()[f_cls]())
+                
+        self.fields = inner_fields
+        #step2: Dataset生成
+        datasets = TabularDataset.splits(**self.config["dataset"] , fields=inner_fields)
+        if len(datasets) == 2:
+            #训练集、验证集的划分
+            train_datasets, test_datasets = datasets
+            train_datasets, valid_datasets = train_datasets.split(random_state=random.seed(self.SEED))
+        elif len(datasets) == 3:
+            train_datasets, valid_datasets, test_datasets = datasets
+
+        min_freq = 1
+        if "vocab" in self.config:
+            vocab = self.config["vocab"]
+            if "min_freq" in vocab:
+                min_freq = vocab["min_freq"]
+
+        #step3: 根据Field生成vocab
+        for item in inner_fields.values():
+            #TODO: 写死了datasets的第一个对象是训练数据，并且构建词典根据训练数据构造
+            name, obj = item
+            if obj.use_vocab:
+                if "label" not in name.lower():
+                    obj.build_vocab(datasets[0], min_freq=min_freq)
                 else:
-                    inner_fields[f_name] = (f_name, globals()[f_cls]())
-                    
-            self.fields = inner_fields
-            #step2: Dataset生成
-            datasets = TabularDataset.splits(**self.config["dataset"] , fields=inner_fields)
-            if len(datasets) == 2:
-                #训练集、验证集的划分
-                train_datasets, test_datasets = datasets
-                train_datasets, valid_datasets = train_datasets.split(random_state=random.seed(self.SEED))
-            elif len(datasets) == 3:
-                train_datasets, valid_datasets, test_datasets = datasets
-            
-            #step3: 根据Field生成vocab
-            for item in inner_fields.values():
-                #TODO: 写死了datasets的第一个对象是训练数据，并且构建词典根据训练数据构造
-                #TODO：预训练的词典的加载
-                name, obj = item
-                if obj.use_vocab:
-                    obj.build_vocab(datasets[0], min_freq=10)
-            #import pdb;pdb.set_trace()
-            #step4: Iterator对象生成
-            data_iterator = BucketIterator.splits((train_datasets, valid_datasets, test_datasets), sort=False, **self.config["iterator"])
+                    obj.build_vocab(datasets[0])
 
-        
-            return data_iterator
+        #step4: Iterator对象生成
+        data_iterator = BucketIterator.splits((train_datasets, valid_datasets, test_datasets), sort=False, **self.config["iterator"])
 
-    def __str__(self):
-        pass
-
-
-
-
-            
-                 
-            
+        return data_iterator

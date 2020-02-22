@@ -4,8 +4,8 @@ import sys
 import argparse
 import json
 
-#from models.lstm_crf_predictor import LstmCrfPredictor
-from models.textcnn_predictor import TextCnnPredictor
+from models.lstm_crf_predictor import LstmCrfPredictor
+from models.predictor import Predictor
 
 
 if __name__ == "__main__":
@@ -17,11 +17,14 @@ if __name__ == "__main__":
     parser.add_argument("--device",
                          type=str,
                          default=None,
-                         required=True,
                         )
     parser.add_argument("--test_path",
                          type=str,
                          required=True,
+                        )  
+    parser.add_argument("--model_type",
+                         type=str,
+                         default="textcnn",
                         )  
     parser.add_argument("--save_path",
                          type=str,
@@ -32,8 +35,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     model_path = args.model_path
     device = args.device
+    model_type = args.model_type
     #step1 初始化predictor
-    predictor = TextCnnPredictor(model_path, device)
+    if model_type == "lstm-crf":
+        predictor = LstmCrfPredictor(model_path, device)
+    else:
+        predictor = Predictor(model_path, device, model_type)
 
     #step2 开始预测
     save_path = open(os.path.join(model_path, args.save_path), "w")
