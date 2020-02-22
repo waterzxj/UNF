@@ -32,7 +32,7 @@ class CnnMaxpoolLayer(nn.Module):
         print("stride", stride)
         self.convs = nn.ModuleList(
             [nn.Conv1d(in_channels=input_num, out_channels=on, 
-                        kernel_size=ks, stride=stride, padding=padding) 
+                        kernel_size=ks, stride=stride, padding=padding, bias=False) 
                         for on, ks in zip(output_num, filter_size)]
         )
 
@@ -60,7 +60,16 @@ class CnnMaxpoolLayer(nn.Module):
         input = torch.transpose(input, 1, 2)
         conv_res = [self.activation(conv(input)) for conv in self.convs] #[b, o, lout]
 
-        tmp = [F.max_pool1d(input=x, kernel_size=x.size(2)).squeeze(2) for x in conv_res]
+        #import pdb;pdb.set_trace()
+        tmp = []
+        for i in range(len(conv_res)):
+            dim = conv_res[i].size(2)
+            if isinstance(dim, torch.Tensor):
+                #trace 无法识别tuple的操作，会转成tensor
+                dim = dim.tolist()
+            max_out = F.max_pool1d(conv_res[i], kernel_size=dim)
+            tmp.append(max_out.squeeze(2))
+
         return torch.cat(tmp, dim=-1)
 
 

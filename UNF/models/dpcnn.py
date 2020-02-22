@@ -6,7 +6,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from model import Model
+from models.model import Model
 
 
 class DpCnn(Model):
@@ -46,7 +46,7 @@ class DpCnn(Model):
         self.linear = nn.Linear(self.filter_num, label_nums)
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, input, label=None, mask=None):
+    def forward(self, input, mask=None, label=None):
         input = self.embedding(input)
 
         if mask is not None:
@@ -69,7 +69,7 @@ class DpCnn(Model):
         logits = self.dropout(self.linear(doc_embedding))
         return {"logits": logits}
 
-    def predict(self, input, label=None, mask=None):
+    def predict(self, input, mask=None, label=None):
         return self.forward(input, label, mask)["logits"]
 
 

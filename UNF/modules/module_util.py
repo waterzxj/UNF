@@ -103,10 +103,10 @@ def mask_softmax(input, dim, mask=None):
     """
     根据dim和mask，对input做softmax的操作
     """
-    if not mask:
+    if mask is None:
         return F.softmax(input, dim=dim)
 
     else:
-        masked_input = input.mask_fill((1 - mask).byte(), -1e32)
+        masked_input = input.masked_fill((1 - mask.unsqueeze(-1)).byte(), -1e32)
         return F.softmax(masked_input, dim=dim)
 

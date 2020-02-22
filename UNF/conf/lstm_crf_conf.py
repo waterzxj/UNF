@@ -45,7 +45,7 @@ model_conf = [
             "input_dim": 100,
             "hidden_size": 200,
             "num_layers": 3,
-            "device": "cuda:1"
+            "device": "cuda:0"
         }
     }
 ]
@@ -66,8 +66,8 @@ learner_conf = {
     "optimizer_parmas": {
         "lr": 1e-5
     },
-    "device": "cuda:1",
-    "serialization_dir": "model_lstm_example",
+    "device": "cuda:0",
+    "serialization_dir": "model_lstm_example1",
     "sequence_model": True,
     "metric": "NerF1Measure"
 }

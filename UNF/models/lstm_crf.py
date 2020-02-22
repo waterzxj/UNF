@@ -22,12 +22,7 @@ class LstmCrfTagger(Model):
 
         :params 
         """
-        super(LstmCrfTagger, self).__init__()
-        self.embedding = TokenEmbedding(input_dim, vocab_size)
-        #加载预训练的词向量
-        if "pretrain" in kwargs:
-            if kwargs["pretrain"]:
-                self.embedding.from_pretrained(kwargs['vectors'])
+        super(LstmCrfTagger, self).__init__(input_dim, vocab_size, **kwargs)
 
         self.encoder = LstmEncoderLayer(input_dim, hidden_size, num_layers, label_nums=label_nums+2,
                 bidirectional=bidirection, batch_first=batch_first, dropout=dropout)
@@ -38,7 +33,7 @@ class LstmCrfTagger(Model):
             self.decoder = CRF(label_nums, device)
 
     def forward(self, input, input_seq_length,
-                 batch_label=None, mask=None):
+                mask=None, batch_label=None):
 
         embedding = self.embedding(input) #batch_size * seq_len * input_dim
         encoder_res = self.encoder(embedding, input_seq_length) #batch * seq_len * (hidden_dim*directions)
@@ -67,7 +62,7 @@ class LstmCrfTagger(Model):
         else:
             return {"logits": tag_seq}
 
-    def predict(self, input, input_seq_length, mask):
+    def predict(self, input, input_seq_length, mask=None):
         input = input.unsqueeze(0)
         res = self.forward(input, input_seq_length, mask)
         return res["logits"]

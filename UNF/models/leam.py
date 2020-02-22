@@ -48,14 +48,14 @@ class LEAM(Model):
         self.fc1 = FullConnectLayer(input_dim, hidden_dim, dropout, "relu")
         self.fc2 = nn.Linear(hidden_dim, label_nums)
 
-    def forward(self, input, label, mask=None):
+    def forward(self, input, mask=None, label=None):
         #import pdb;pdb.set_trace()
         word_embedding = self.embedding(input) #b * s * dim
         embedding_label = self.label_embedding(label)
 
         label_embedding = self.label_embedding.embeddings.weight
 
-        if mask:
+        if mask is not None:
             word_embedding = word_embedding * mask.unsqueeze(-1).float()
 
         if self.norm:
@@ -88,5 +88,5 @@ class LEAM(Model):
 
         return output
 
-    def predict(self, input, label, mask=None):
+    def predict(self, input, mask=None, label=None):
         return self.forward(input, label, mask)["logits"]

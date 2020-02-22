@@ -8,9 +8,10 @@ iterator: 提供迭代的配置，包括每个batch大小，device是cpu还是gp
 #data_loader相关
 data_loader_conf = {
     "dataset":{
-        "path": "test/test_data/aclImdb",
-        "train": "train",
-        "test": "test",
+        "path": "test/test_data/tiktok_music",
+        "train": "music_train",
+        "validation": "music_valid",
+        "test": "music_test",
         "format": "json"
     },
     "fields":[{
@@ -37,7 +38,7 @@ model_conf = [
         "encoder_cls": "LEAM",
         "encoder_params": {
             "input_dim": 100,
-            "ngram": 3,
+            "ngram": 6,
             "dropout": 0.1,
             "pretrained": False,
         }
@@ -55,14 +56,14 @@ decoder_conf = {
 
 #learner相关的
 learner_conf = {
-    "num_epochs": 20,
+    "num_epochs": 10,
     "optimizer": "Adam",
     "optimizer_parmas": {
         "lr": 1e-4
     },
-    "device": "cuda:1",
+    "device": "cuda:2",
     "loss": "CrossEntropyLoss",
-    "serialization_dir": "imdb_leam",
-    "label_tag": "pos"
+    "serialization_dir": "tiktok_music_leam",
+    "label_tag": "__label__1"
 }
 

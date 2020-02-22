@@ -19,6 +19,7 @@ data_loader_conf = {
         "name_cls":"WordField",
         "attrs":{
             "tokenize":"WhitespaceTokenizer",
+            "include_lengths": True
             }
         },
         {
@@ -35,11 +36,12 @@ data_loader_conf = {
 model_conf = [
     {
         "name": "TEXT",
-        "encoder_cls": "TextCnn",
+        "encoder_cls": "SelfAttention",
         "encoder_params": {
             "input_dim": 100,
-            "filter_num": 100,
-            "filter_size": [1,2,3,4],
+            "hidden_size": 200,
+            "layer_num": 3,
+            "attention_num": 4,
             "pretrained": False,
         }
     }
@@ -61,9 +63,10 @@ learner_conf = {
     "optimizer_parmas": {
         "lr": 1e-4
     },
-    "device": "cuda:2",
+    "device": "cuda:1",
     "loss": "CrossEntropyLoss",
-    "serialization_dir": "sex_textcnn",
-    "label_tag": "1"
+    "serialization_dir": "sex_selfattention",
+    "label_tag": "__label__1",
+    "sequence_model": False,
 }
 

@@ -65,7 +65,7 @@ class DataLoader(object):
                 #TODO：预训练的词典的加载
                 name, obj = item
                 if obj.use_vocab:
-                    obj.build_vocab(datasets[0])
+                    obj.build_vocab(datasets[0], min_freq=10)
             #import pdb;pdb.set_trace()
             #step4: Iterator对象生成
             data_iterator = BucketIterator.splits((train_datasets, valid_datasets, test_datasets), sort=False, **self.config["iterator"])

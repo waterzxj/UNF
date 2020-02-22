@@ -18,6 +18,7 @@ class Predictor(nn.Module):
 
         self.model = self.model_loader(Config.from_json_file(model_conf))
         self.model.load_state_dict(torch.load(os.path.join(model_save_path, "best.th")))
+        self.model.eval()
                                     
         self.device = device
         if self.device is not None:
@@ -32,12 +33,16 @@ class Predictor(nn.Module):
     def predict(self, input, **kwargs):
         input = input.split()
         input_ids = [self.vocab.get(item, 0) for item in input]
+
         input_ids = torch.LongTensor(input_ids)
         if self.device is not None:
             input_ids = input_ids.to(self.device)
 
-        res = self.model.predict(input_ids)
-        
+        #mock
+        mask = (input_ids != 1).long()
+
+        res = self.model.predict(input_ids, mask)
+        res = res.detach().cpu().tolist()[0]
         return res
 
     def load_vocab(self, path, reverse=False):

@@ -28,7 +28,7 @@ class Trainer(object):
                     histogram_interval=200, should_log_parameter_statistics=False,
                     should_log_learning_rate=False, log_batch_size_period=False,
                     num_serialized_models_to_keep=20, sequence_model=False, fields=None,
-                     model_conf=None, **kwargs):          
+                     model_conf=None, padding_idx=1, **kwargs):          
         """
         训练过程的封装
 
@@ -65,6 +65,7 @@ class Trainer(object):
         self.label_vocab = label_vocab
         self.fields = fields
         self.model_conf = model_conf
+        self.padding_idx = padding_idx
 
         if self.cuda_device != -1:
             self.model =self.model.to(self.cuda_device)
@@ -211,6 +212,11 @@ class Trainer(object):
         model_path = os.path.join(self.serialization_dir, "conf.json")
         dump_metrics(model_path, self.model_conf)
 
+        #dump vocab freq
+        vocab_freq_path = os.path.join(self.serialization_dir, "vocab_freq.txt")
+        vocab = self.fields["TEXT"][1].vocab.stoi
+        dump_metrics(vocab_freq_path, vocab)
+
     def save_checkpoint(self, epoch):
         """
         保存模型训练的checkpoint
@@ -337,9 +343,12 @@ class Trainer(object):
         """
         每个batch的数据得到loss
         """
-        if self.sequence_model:
-            tmp = batch_group.TEXT
-            label = batch_group.LABEL.t()
+        tmp = batch_group.TEXT
+        label = batch_group.LABEL
+        if len(label.size()) > 1:
+            label = label.t()
+
+        if len(tmp) == 2:
             data = tmp[0].t()
             data_seq_length = tmp[1]
 
@@ -347,19 +356,18 @@ class Trainer(object):
             batch_size = data.size(0)
             mask = generate_mask(data_seq_length, seq_len, batch_size)
         else:
-            data, label = batch_group
-            data = data.t() 
-            mask = None #mask计算todo
+            data = tmp.t()
+            data_seq_length = None
+            mask = (data != self.padding_idx).long() #mask计算todo
 
         if self.cuda_device != -1:
             data, label = data.to(self.cuda_device), label.to(self.cuda_device)
-            if mask:
-                mask = mask.to(self.cuda_device)
+            mask = mask.to(self.cuda_device)
 
-        if self.sequence_model:
-            res = self.model(data, data_seq_length, label, mask)
+        if data_seq_length is not None:
+            res = self.model(data, data_seq_length, mask, label)
         else:
-            res = self.model(data, label, mask)
+            res = self.model(data, mask, label)
 
         #计算loss
         logits = res["logits"]
@@ -370,7 +378,10 @@ class Trainer(object):
         else:
             loss = res["loss"]
         #更新metric
-        self.metric(logits, label, mask)
+        if self.sequence_model:
+            self.metric(logits, label, mask)
+        else:
+            self.metric(logits, label)
         return loss
 
     def val_epoch(self, mode="val"):

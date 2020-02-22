@@ -4,7 +4,8 @@ import sys
 import argparse
 import json
 
-from models.lstm_crf_predictor import LstmCrfPredictor
+#from models.lstm_crf_predictor import LstmCrfPredictor
+from models.textcnn_predictor import TextCnnPredictor
 
 
 if __name__ == "__main__":
@@ -32,14 +33,14 @@ if __name__ == "__main__":
     model_path = args.model_path
     device = args.device
     #step1 初始化predictor
-    predictor = LstmCrfPredictor(model_path, device)
+    predictor = TextCnnPredictor(model_path, device)
 
     #step2 开始预测
     save_path = open(os.path.join(model_path, args.save_path), "w")
     for line in open(args.test_path):
         line = json.loads(line.rstrip())
         pred = predictor.predict(line["TEXT"])
-        save_path.write("%s\t%s\t%s\n" % (line["TEXT"], line["LABEL"], " ".join(pred)))
+        save_path.write("%s\t%s\t%s\n" % (line["TEXT"], line["LABEL"], " ".join(map(str, pred))))
 
     save_path.close()
 

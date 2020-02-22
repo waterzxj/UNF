@@ -8,10 +8,11 @@ iterator: 提供迭代的配置，包括每个batch大小，device是cpu还是gp
 #data_loader相关
 data_loader_conf = {
     "dataset":{
-        "path":"test/test_data/aclImdb",
-        "train":"train",
-        "test":"test",
-        "format":"json"
+        "path": "test/test_data/tiktok_music",
+        "train": "music_train",
+        "validation": "music_valid",
+        "test": "music_test",
+        "format": "json"
     },
     "fields":[{
         "name":"TEXT",
@@ -34,13 +35,10 @@ data_loader_conf = {
 model_conf = [
     {
         "name": "TEXT",
-        "encoder_cls": "TextCnn",
+        "encoder_cls": "FastText",
         "encoder_params": {
             "input_dim": 100,
-            "filter_num": 100,
-            "filter_size": [1,2,3,4],
-            "dropout": 0.1,
-            "pretrained": False,
+            "hidden_dim": 200,
         }
     }
 ]
@@ -63,7 +61,7 @@ learner_conf = {
     },
     "device": "cuda:1",
     "loss": "CrossEntropyLoss",
-    "serialization_dir": "model_save",
-    "label_tag": "pos"
+    "serialization_dir": "fasttext",
+    "label_tag": "__label__1"
 }
 

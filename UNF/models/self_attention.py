@@ -31,16 +31,16 @@ class SelfAttention(Model):
         super(SelfAttention, self).__init__(input_dim, vocab_size, **kwargs)
         self.coefficient = coefficient
     
-        self.encoder = LstmEncoderLayer(input_dim, hidden_size, layer_num, label_nums=label_nums,
+        self.encoder = LstmEncoderLayer(input_dim, hidden_size, layer_num,
                 bidirectional=bidirection, batch_first=batch_first, dropout=dropout)
 
         self.averge_batch_loss = averge_batch_loss
 
-        self.att_encoder = SelfAttentionEncoder(attention_num, hidden_size, hidden_size/4,
+        self.att_encoder = SelfAttentionEncoder(attention_num, hidden_size, int(hidden_size/4),
                                                 coefficient )
         self.fc = nn.Linear(hidden_size * attention_num, label_nums)
 
-    def forward(self, input, input_seq_length, label=None, mask=None):
+    def forward(self, input, input_seq_length, mask=None, label=None):
         embedding = self.embedding(input) #batch_size * seq_len * input_dim
         encoder_res = self.encoder(embedding, input_seq_length) #batch * seq_len * (hidden_size)
         batch_size = encoder_res.size(0)
@@ -59,7 +59,7 @@ class SelfAttention(Model):
 
         return output
 
-    def predict(self, input, input_seq_length, label=None, mask=None):
+    def predict(self, input, input_seq_length, mask=None, label=None):
         return self.forward(input, input_seq_length, label, mask)["logits"]
         
 

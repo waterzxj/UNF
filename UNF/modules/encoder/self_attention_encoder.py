@@ -19,16 +19,17 @@ class  SelfAttentionEncoder(nn.Module):
         :params input_dim int 输入数据的维数
         :params attention_dim attention的维度大小，超参，attention的一个中间变量
         """
-        self.att_s1 = nn.Linear(input_dim, attention_dim)
-        self.att_s2 = nn.Linear(attention_dim, head_num)
+        super(SelfAttentionEncoder, self).__init__()
+        self.att_s1 = nn.Linear(input_dim, attention_dim, bias=False)
+        self.att_s2 = nn.Linear(attention_dim, head_num, bias=False)
         self.coefficient = coefficient
 
     def forward(self, input, mask=None):
         inner_out = self.att_s1(input) #batch_size * seq_len * attention_dim
         final_out = self.att_s2(inner_out) #batch_size * seq_len * head_num
 
-        if mask:
-            mask = mask.unsqueeze(2) #batch_size * seq_len * 1
+        #if mask is not None:
+        #    mask = mask.unsqueeze(2) #batch_size * seq_len * 1
 
         att_weight = mask_softmax(final_out, 1, mask) #batch_size * seq_len * head_num
         
