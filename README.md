@@ -19,7 +19,7 @@ Now, support ***text classification*** and ***sequeence labeling*** related task
 
 
 # Framwork
-![image](http://github.com/waterzxj/UNF/raw/master/readme/system.png)
+![image](https://github.com/waterzxj/UNF/blob/master/readme/system.png)
 
 
 
