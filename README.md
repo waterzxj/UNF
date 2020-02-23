@@ -29,7 +29,7 @@ Module name | Module function
  UNF.data  | Load data from disk to RAM, include batch, padding,numerical
 UNF.module  | Neural network layer, include encoder, decoder, embedding, provided for use by the model
 UNF.model | Neural network model structure, include DpCnn, SelAttention,Lstm-crf..and python predictor for those models
-UNF.traing | Model training, include early stopping, model save and reload, visualize metrics throuth Tensorboard
+UNF.training | Model training, include early stopping, model save and reload, visualize metrics throuth Tensorboard
 UNF.tracing | Trace pytorch dynamic graph to static graph, and provide c++ serving
 UNF.web_server | Web server tool related
 
