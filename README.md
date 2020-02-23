@@ -21,8 +21,110 @@ Now, support ***text classification*** and ***sequeence labeling*** related task
 # Framwork
 ![image](https://github.com/waterzxj/UNF/blob/master/readme/system.png)
 
+
 # Module relation
-![image](https://github.com/waterzxj/UNF/blob/master/readme/module.png)
+
+Module name | Module function
+---|---
+ UNF.data  | Load data from disk to RAM, include batch, padding,numerical
+UNF.module  | Neural network layer, include encoder, decoder, embedding, provided for use by the model
+UNF.model | Neural network model structure, include DpCnn, SelAttention,Lstm-crf..and python predictor for those models
+UNF.traing | Model training, include early stopping, model save and reload, visualize metrics throuth Tensorboard
+UNF.tracing | Trace pytorch dynamic graph to static graph, and provide c++ serving
+UNF.web_server | Web server tool related
 
 
+# Requirement
+python3
+
+pip3 install -r requirement.txt
+
+# Training
+
+```
+#quick start
+python3 train_flow.py
+```
+***Only* 5 line code need**
+```
+#data loader
+data_loader = DataLoader(data_loader_conf)
+train_iter, dev_iter, test_iter = data_loader.generate_dataset()
+
+#model loader
+model, model_conf = ModelLoader.from_params(model_conf, data_loader.fields)
+
+#learner loader
+learner = LearnerLoader.from_params(model, train_iter, dev_iter, learner_conf, test_iter=test_iter, fields=data_loader.fields, model_conf=model_conf)
+
+#learning
+learner.learn()
+```
+
+# Python inference
+
+```
+#quick start
+python3 score_flow.py
+```
+
+```
+#core code
+from models.predictor import Predictor
+
+predictor = Predictor(model_path, device, model_type)
+logits = predictor.predict(input)
+
+(0.18, -0.67)
+```
+
+# C++ inference
+
+### step1: Trace dynamic graph to static graph
+
+
+```
+#quick start
+python3 trace.py
+```
+
+```
+#core code
+net = globals()[model_cls](**config.__dict__)
+net.load_state_dict_trace(torch.load("%s/best.th" % model_path))
+net.eval()
+
+mock_input = net.mock_input_data()
+tr = torch.jit.trace(net, mock_input)
+tr.save("trace/%s" % save_path)
+```
+
+### step2: c++ serving
+- install cmake
+- download [libtorch](https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-1.2.0.zip) and unzip to trace folder
+
+```
+cd trace
+cmake -DCMAKE_PREFIX_PATH=libtorch .
+```
+![image](https://github.com/waterzxj/UNF/blob/master/readme/cmake.png)
+
+```
+make
+```
+![image](https://github.com/waterzxj/UNF/blob/master/readme/make.png)
+
+```
+./predict trace.pt predict_vocab.txt
+output: 2.2128 -2.3287
+```
+
+# REST-API web demo
+
+```
+cd web_server
+python run.py
+```
+
+![image](https://github.com/waterzxj/UNF/blob/master/readme/web_demo.png)
 
