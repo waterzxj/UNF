@@ -1,0 +1,8 @@
+apex.egg==info
+torchtext==0.5.0
+torch==1.0.0
+apex==0.9.10dev
+Flask==1.1.1
+spacy==2.2.3
+tensorboardX==2.0
+tornado==6.0.3

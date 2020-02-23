@@ -8,10 +8,10 @@ iterator: 提供迭代的配置，包括每个batch大小，device是cpu还是gp
 #data_loader相关
 data_loader_conf = {
     "dataset":{
-        "path": "test/test_data/tiktok_music",
-        "train": "music_train",
-        "validation": "music_valid",
-        "test": "music_test",
+        "path": "test/test_data/data",
+        "train": "train_sample",
+        "validation": "val_sample",
+        "test": "test",
         "format": "json"
     },
     "fields":[{
@@ -26,7 +26,7 @@ data_loader_conf = {
             "name_cls":"LabelField",
         }],
     "iterator":{
-        "batch_size":64,
+        "batch_size":512,
         "shuffle": True,
     }
 }
@@ -54,14 +54,15 @@ decoder_conf = {
 
 #learner相关的
 learner_conf = {
-    "num_epochs": 10,
+    "num_epochs": 6,
     "optimizer": "Adam",
     "optimizer_parmas": {
-        "lr": 1e-5
+        "lr": 1e-4
     },
-    "device": "cuda:1",
+    "device": "cuda:0",
     "loss": "CrossEntropyLoss",
-    "serialization_dir": "fasttext",
-    "label_tag": "__label__1"
+    "serialization_dir": "sex_fasttext",
+    "label_tag": "1",
+    "use_fp16": True,
+    "multi_gpu": True
 }
-

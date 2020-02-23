@@ -1,3 +1,7 @@
+#coding:utf-8
+import os
+import sys
+
 class InitType():
     """
     各种矩阵初始化的方法

@@ -4,8 +4,6 @@ Embedding类的抽象
 """
 import os
 import sys
-sys.path.append("modules")
-print(sys.path)
 
 import torch
 from torch import nn
