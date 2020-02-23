@@ -1,6 +1,9 @@
 #coding:utf-8
 """
-训练一个textcnn文本分类模型的工作流
+训练一个文本分类模型的工作流
+加载数据 -> 加载模型 -> 训练保存
+
+以下提供了各个分类模型的conf文件
 """
 import sys
 #from conf.lstm_crf_conf import data_loader_conf,model_conf,learner_conf
