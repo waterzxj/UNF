@@ -5,7 +5,7 @@ UNF(Universal NLP Framework) is built on pytorch and torchtext. Its design philo
 - ***comprehensive***: support pytorch **trace** into static graph, support **c ++** server, provide web-server for **debugging tools**
 
 # Support Tasks
-Now, support ***text classification*** and ***sequeence labeling*** related tasks. 
+Now, support ***text classification*** and ***sequence labeling*** related tasks. 
 
 # Related Papers
 - Convolutional Neural Networks for Sentence Classification [2014](https://arxiv.org/abs/1408.5882)
