@@ -11,8 +11,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from module_util import init_tensor
-from base_type import InitType, FAN_MODE, ActivationType
+from modules.module_util import init_tensor
+from modules.base_type import InitType, FAN_MODE, ActivationType
 
 
 class BaseEmbedding(nn.Module):

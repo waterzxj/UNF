@@ -1,0 +1,77 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>UNF web demo</title>
+    <!-- jQuery (Bootstrap 的所有 JavaScript 插件都依赖 jQuery，所以必须放在前边) -->
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    <!-- 加载 Bootstrap 的所有 JavaScript 插件。你也可以根据需要只加载单个插件。 -->
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!-- CSS  -->
+    <link href="{{ url_for('static', filename='css/bootstrap.css') }}" rel="stylesheet">
+</head>
+<body>
+<br><br><br>
+<div class="container">
+    <p style="font-size: 24px; padding-left: 10px;">UNF web demo</p>
+    <br>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Text</h3>
+        </div>
+        <div class="panel-body">
+            <form class="form-inline" method="post" action="/debug/index">
+                <div class="form-group">
+                    <label class="col-md-3 control-label" for="title" style="line-height:30px;text-align:right">Input Text:</label>
+                    <div class="col-md-6">
+                        {% if input_value %}
+                        <input type="text" value="{{ input_value }}" class="form-control" name='title' size="60">
+                        {%else%}
+                        <input type="text" class="form-control" name='title' size="60">
+
+                        {%endif%}
+
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-10">
+                        <button type="submit" class="btn btn-info search">
+                            <i class="glyphicon glyphicon-search"></i>
+                            <span>Search</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Result</h3>
+        </div>
+        <div class="panel-body">
+            <table class="table table-bordered table-hover">
+                {% if model_info %}
+                    <caption>Model info</caption>
+                    <tbody>
+                    <tr>
+                        <td style="min-width:100px">{{ model_info }}</td>
+                    </tr>
+                    </tbody>
+                {% endif %}
+            </table>
+
+            <table class="table table-bordered table-hover">
+                {% if score %}
+                    <caption>Score</caption>
+                    <tbody>
+                    <tr>
+                        <td style="min-width:100px">{{ score }}</td>
+                    </tr>
+                    </tbody>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</div>
+</body>

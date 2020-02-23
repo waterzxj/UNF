@@ -57,8 +57,6 @@ int main(int argc, const char* argv[])
         std::vector<torch::jit::IValue> inputs;
         inputs.push_back(torch::from_blob(t2id.data(), {1, max_seq_length}).to(torch::kLong));
         inputs.push_back(mask.to(torch::kLong));
-        std::cout << inputs[0] << std::endl;
-        std::cout << inputs[1] << std::endl;
         torch::Tensor logits = module.forward(inputs).toTensor();
         //torch::Tensor logits = module.forward({input}).toTensor();
         std::cout << logits << std::endl;

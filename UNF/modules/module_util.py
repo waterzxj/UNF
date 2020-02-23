@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
-from base_type import InitType, FAN_MODE, ActivationType
+from modules.base_type import InitType, FAN_MODE, ActivationType
 
 def init_tensor(tensor, init_type=InitType.XAVIER_UNIFORM, low=0, high=1,
                 mean=0, std=1, activation_type=ActivationType.NONE,
