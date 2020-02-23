@@ -1,8 +1,8 @@
 # Introduction
-#### Designing philosophy
+UNF(Universal NLP Framework) is built on pytorch and torchtext. Its design philosophy is：
 - ***modularity***: specifically, on the one hand, it is convenient to quickly run some nlp-related tasks; on the other hand, it is convenient for secondary development and research to implement some new models or technologies.
-- ***efficiency***: supports distributed training and half-precision training, which is convenient for quickly training the model, although the current support is relatively crude
-- ***comprehensive***: support pytorch trace into static graph, support c ++ server, provide web-server for debugging tools
+- ***efficiency***: supports **distributed training** and **half-precision** training, which is convenient for quickly training the model, although the current support is relatively crude
+- ***comprehensive***: support pytorch **trace** into static graph, support **c ++** server, provide web-server for **debugging tools**
 
 # Support Tasks
 Now, support ***text classification*** and ***sequeence labeling*** related tasks. In the future, will add text generate and text match related tasks.
@@ -19,7 +19,7 @@ Now, support ***text classification*** and ***sequeence labeling*** related task
 
 
 # Framwork
-![image](https://github.com/waterzxj/UNF/blob/master/readme/system.png)
+![image](https://github.com/waterzxj/UNF/blob/master/pic/system.png)
 
 
 # Module relation
@@ -107,12 +107,12 @@ tr.save("trace/%s" % save_path)
 cd trace
 cmake -DCMAKE_PREFIX_PATH=libtorch .
 ```
-![image](https://github.com/waterzxj/UNF/blob/master/readme/cmake.png)
+![image](https://github.com/waterzxj/UNF/blob/master/pic/cmake.png)
 
 ```
 make
 ```
-![image](https://github.com/waterzxj/UNF/blob/master/readme/make.png)
+![image](https://github.com/waterzxj/UNF/blob/master/pic/make.png)
 
 ```
 ./predict trace.pt predict_vocab.txt
@@ -126,5 +126,5 @@ cd web_server
 python run.py
 ```
 
-![image](https://github.com/waterzxj/UNF/blob/master/readme/web_demo.png)
+![image](https://github.com/waterzxj/UNF/blob/master/pic/web_demo.png)
 
