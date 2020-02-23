@@ -40,6 +40,8 @@ class ModelTrace(nn.Module):
 
         self.load_state_dict(true_state_dict, strict)
 
+    def get_parameter_names(self):
+        return [name for name, _ in self.named_parameters()]
 
 
     

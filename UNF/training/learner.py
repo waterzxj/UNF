@@ -4,14 +4,14 @@ import time
 import os
 import sys
 import traceback
-sys.path.append("training/learner_util")
 
-from learner_util import MetricTracker, rescale_gradients, TensorBoardWriter
-from learner_util import dump_metrics, Checkpointer, enable_gradient_clipping
-from learner_util import generate_mask
-from metric import *
-from loss import *
-from optimizer import *
+from training.learner_util import MetricTracker, rescale_gradients, TensorBoardWriter
+from training.learner_util import dump_metrics, Checkpointer, enable_gradient_clipping
+from training.learner_util import generate_mask
+from training.metric import *
+from training.loss import *
+from training.optimizer import *
+
 
 logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                             level=logging.INFO)
@@ -28,7 +28,7 @@ class Trainer(object):
                     histogram_interval=200, should_log_parameter_statistics=False,
                     should_log_learning_rate=False, log_batch_size_period=False,
                     num_serialized_models_to_keep=20, sequence_model=False, fields=None,
-                     model_conf=None, padding_idx=1, **kwargs):          
+                     model_conf=None, padding_idx=1, use_fp16=False, multi_gpu=False, **kwargs):          
         """
         训练过程的封装
 
@@ -66,6 +66,8 @@ class Trainer(object):
         self.fields = fields
         self.model_conf = model_conf
         self.padding_idx = padding_idx
+        self.use_fp16 = use_fp16
+        self.multi_gpu = multi_gpu
 
         if self.cuda_device != -1:
             self.model =self.model.to(self.cuda_device)
@@ -106,6 +108,20 @@ class Trainer(object):
         if loss is not None:
             self.loss_func = globals()[loss]()
 
+        if self.use_fp16:
+            try:
+                from apex import amp
+            except ImportError:
+                raise ImportError("Please install apex from https://www.github.com/nvidia/apex")
+
+            self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1")
+
+        if self.multi_gpu:
+            n_gpus = torch.cuda.device_count()
+            if n_gpus > 1:
+                self.param_model = self.model #patch
+                self.model = torch.nn.DataParallel(self.model) #multi-gpu init shoul after fp16, and multi gpu trully is multi-thread
+
     def rescale_gradients(self):
         return rescale_gradients(self.model, self.grad_norm)
 
@@ -144,7 +160,7 @@ class Trainer(object):
 
             if self.val_iter is not None:
                 with torch.no_grad():
-                    val_loss, num_batches = self.val_epoch()
+                    val_loss, num_batches = self.val_epoch(self.model)
                     val_metrics = self.get_metrics(val_loss, num_batches, reset=True)
                     this_epoch_val_metric = val_metrics[self.validation_metric]
                     self.metric_tracker.add_metric(this_epoch_val_metric)
@@ -186,8 +202,12 @@ class Trainer(object):
             train_epoch += 1
 
         if self.test_iter is not None:
-            self.model.load_state_dict(torch.load(os.path.join(self.serialization_dir, "best.th")))
-            test_loss, test_batches = self.val_epoch(mode="test")
+            if self.multi_gpu:
+                self.param_model.load_state_dict(torch.load(os.path.join(self.serialization_dir, "best.th")))
+                test_loss, test_batches = self.val_epoch(self.param_model, mode="test")
+            else:
+                self.model.load_state_dict(torch.load(os.path.join(self.serialization_dir, "best.th")))
+                test_loss, test_batches = self.val_epoch(self.model, mode="test")
             test_metrics = self.get_metrics(test_loss, test_batches, reset=True)
             test_metrics["label_index"] = self.label_index
             if self.serialization_dir is not None:
@@ -232,8 +252,10 @@ class Trainer(object):
                 self.learning_rate_scheduler.state_dict()
             )
 
+        #comfortabel with the multi-gpu training
+        model_state = self.model.state_dict() if not hasattr(self.model, "module") else self.model.module.state_dict()
         self.checkpointer.save_checkpoint(
-            model_state=self.model.state_dict(),
+            model_state=model_state,
             epoch=epoch,
             training_states=training_states,
             is_best_so_far=self.metric_tracker.is_best_so_far()
@@ -288,7 +310,11 @@ class Trainer(object):
         if self.batch_num_total is None:
             self.batch_num_total = 0
         
-        histogram_parameters = set(self.model.get_parameter_names())
+        if self.multi_gpu:
+            histogram_parameters = set(self.param_model.get_parameter_names())
+        else:
+            histogram_parameters = set(self.model.get_parameter_names())
+
         logger.info("Training")
 
         for batch_group in self.train_iter:
@@ -296,11 +322,16 @@ class Trainer(object):
             self.batch_num_total += 1
             self.optimizer.zero_grad()
 
-            loss = self.batch_loss(batch_group)
+            loss = self.batch_loss(self.model, batch_group)
             if torch.isnan(loss):
                 raise ValueError("nan loss encountered")
 
-            loss.backward()
+            if self.use_fp16:
+                from apex import amp
+                with amp.scale_loss(loss, self.optimizer) as scale_loss:
+                    scale_loss.backward()
+            else:
+                loss.backward()
             train_loss += loss.item()
             batch_grad_norm = self.rescale_gradients()
 
@@ -339,7 +370,7 @@ class Trainer(object):
         metrics["loss"] = float(loss) / (batchs + 1e-8) if float(loss) > 0 else 0.0
         return metrics
 
-    def batch_loss(self, batch_group):
+    def batch_loss(self, model, batch_group):
         """
         每个batch的数据得到loss
         """
@@ -365,9 +396,9 @@ class Trainer(object):
             mask = mask.to(self.cuda_device)
 
         if data_seq_length is not None:
-            res = self.model(data, data_seq_length, mask, label)
+            res = model(data, data_seq_length, mask, label)
         else:
-            res = self.model(data, mask, label)
+            res = model(data, mask, label)
 
         #计算loss
         logits = res["logits"]
@@ -384,7 +415,7 @@ class Trainer(object):
             self.metric(logits, label)
         return loss
 
-    def val_epoch(self, mode="val"):
+    def val_epoch(self, model, mode="val"):
         if mode == "val":
             logger.info("Validating")
             data_iter = self.val_iter
@@ -392,12 +423,12 @@ class Trainer(object):
             logging.info("Test")
             data_iter = self.test_iter
 
-        self.model.eval()
+        model.eval()
         batches_this_epoch = 0
         val_loss = 0.0
 
         for batch_group in data_iter:
-            loss = self.batch_loss(batch_group)
+            loss = self.batch_loss(model, batch_group)
 
             if loss is not None:
                 batches_this_epoch += 1
