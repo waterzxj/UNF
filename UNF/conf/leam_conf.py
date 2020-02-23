@@ -45,15 +45,6 @@ model_conf = [
     }
 ]
 
-#多域模型需要
-aggregator_conf = {
-
-}
-
-decoder_conf = {
-    
-}
-
 #learner相关的
 learner_conf = {
     "num_epochs": 10,
