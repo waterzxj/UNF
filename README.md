@@ -120,7 +120,7 @@ make
 output: 2.2128 -2.3287
 ```
 
-# REST-API web demo
+# RESTFUL-API web demo
 
 ```
 cd web_server
