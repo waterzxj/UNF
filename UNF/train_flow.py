@@ -6,12 +6,7 @@
 以下提供了各个分类模型的conf文件
 """
 import sys
-#from conf.lstm_crf_conf import data_loader_conf,model_conf,learner_conf
-#from conf.dpcnn_conf import data_loader_conf,model_conf,learner_conf
-#from conf.textcnn_conf import data_loader_conf,model_conf,learner_conf
-from conf.fasttext_conf import data_loader_conf,model_conf,learner_conf
-#from conf.leam_conf import data_loader_conf,model_conf,learner_conf
-#from conf.selfattention_conf import data_loader_conf,model_conf,learner_conf
+from conf.textcnn_conf import data_loader_conf,model_conf,learner_conf
 from data.data_loader import DataLoader
 from models.model_loader import ModelLoader
 from training.learner_loader import LearnerLoader

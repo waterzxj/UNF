@@ -20,35 +20,42 @@ class DataLoader(object):
     一个Batch对象，生成Batch对象的时候会调用Field对象的process方法完成string2id的映射转换和pad过程；
     Batch对象主要是包含一个batch_size的Example对象
 
-    目前是根据config里面的名字，通给类名反射拿到相应的类进行实例化成对象；TODO:这个机制就需要提供注册的机制往模块里面
-    注册新的类，方便做用户扩展
     """
 
     def __init__(self, config):
         self.config = config
-        self.SEED = 1441 #mock data
+        self.SEED = 1441 #magic data
         self.fields = None
 
     def generate_dataset(self):
-            
         fields = self.config["fields"]
         #step1: Field生成
         inner_fields = {}
+        inner_info = {}
+
         for item in fields:
             f_name = item["name"]
             f_cls = item["name_cls"]
             if "attrs" in item:
                 if "tokenize" in item["attrs"]:
-                    #通过反射拿到tokenize对象
+                    #初始化field的tokenizer对象
                     if "language" in item["attrs"]:
                         item["attrs"]["tokenize"] = globals()[item["attrs"]["tokenize"]](item["attrs"]["language"])
                     else:
                         item["attrs"]["tokenize"] = globals()[item["attrs"]["tokenize"]]()
+
+                    #初始化field建词表的信息 
+                    if "min_count" in item["attrs"]:
+                        inner_info[f_name] = item["attrs"]["min_count"]
+                        del item["attrs"]["min_count"]
+
+
                 inner_fields[f_name] = (f_name, globals()[f_cls](**item["attrs"]))
             else:
                 inner_fields[f_name] = (f_name, globals()[f_cls]())
                 
         self.fields = inner_fields
+
         #step2: Dataset生成
         datasets = TabularDataset.splits(**self.config["dataset"] , fields=inner_fields)
         if len(datasets) == 2:
@@ -58,19 +65,12 @@ class DataLoader(object):
         elif len(datasets) == 3:
             train_datasets, valid_datasets, test_datasets = datasets
 
-        min_freq = 1
-        if "vocab" in self.config:
-            vocab = self.config["vocab"]
-            if "min_freq" in vocab:
-                min_freq = vocab["min_freq"]
-
-        #step3: 根据Field生成vocab
+        #step3: 根据Field生成对应的词表
         for item in inner_fields.values():
-            #TODO: 写死了datasets的第一个对象是训练数据，并且构建词典根据训练数据构造
             name, obj = item
             if obj.use_vocab:
-                if "label" not in name.lower():
-                    obj.build_vocab(datasets[0], min_freq=min_freq)
+                if name in inner_info:
+                    obj.build_vocab(datasets[0], min_freq=inner_info[name])
                 else:
                     obj.build_vocab(datasets[0])
 

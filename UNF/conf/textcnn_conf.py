@@ -9,8 +9,8 @@ iterator: 提供迭代的配置，包括每个batch大小，device是cpu还是gp
 data_loader_conf = {
     "dataset":{
         "path": "test/test_data/data",
-        "train": "train_sample",
-        "validation": "val_sample",
+        "train": "train",
+        "validation": "valid",
         "test": "test",
         "format": "json"
     },
@@ -19,6 +19,7 @@ data_loader_conf = {
         "name_cls":"WordField",
         "attrs":{
             "tokenize":"WhitespaceTokenizer",
+            "min_count": 3
             }
         },
         {
@@ -55,9 +56,9 @@ learner_conf = {
     },
     "device": "cuda:0",
     "loss": "CrossEntropyLoss",
-    "serialization_dir": "sex_textcnn5",
+    "serialization_dir": "sample_dir",
     "label_tag": "1",
-    "use_fp16": True,
-    "multi_gpu": True
+    "use_fp16": False,
+    "multi_gpu": False
 }
 
