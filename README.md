@@ -61,6 +61,17 @@ learner = LearnerLoader.from_params(model, train_iter, dev_iter, learner_conf, t
 #learning
 learner.learn()
 ```
+### 代码库提供了train_flow.py脚本可直接开箱运行示例
+
+### 如下conf设置即可跑混合精度训练和多gpu训练
+```
+"use_fp16": False,
+"multi_gpu": False
+```
+
+### 训练结果自动注入tensorboard监控
+![image](https://github.com/waterzxj/UNF/blob/master/pic/tensorboard1.png)
+![image](https://github.com/waterzxj/UNF/blob/master/pic/tensorboard2.png)
 
 # Python inference
 
